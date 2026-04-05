@@ -1,0 +1,149 @@
+services:
+    zookeeper:
+        image: confluentinc/cp-zookeeper:7.5.0
+        container_name: zookeeper
+        restart: unless-stopped
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+        volumes:
+            - zookeeper-data:/var/lib/zookeeper/data
+            - zookeeper-log:/var/lib/zookeeper/log
+
+    kafka:
+        image: confluentinc/cp-kafka:7.5.0
+        container_name: kafka
+        restart: unless-stopped
+        depends_on:
+            - zookeeper
+        ports:
+            - "9092:9092"
+            - "29092:29092"
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+            KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        volumes:
+            - kafka-data:/var/lib/kafka/data
+        healthcheck:
+            test: [ "CMD-SHELL", "cub kafka-ready -b localhost:9092 1 20" ]
+            interval: 10s
+            timeout: 10s
+            retries: 10
+            start_period: 20s
+
+    mysql:
+        image: mysql:8.0
+        container_name: mysql
+        restart: unless-stopped
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: delivery
+        command:
+            - --server-id=1
+            - --log-bin=mysql-bin
+            - --binlog-format=ROW
+        volumes:
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            test: [ "CMD-SHELL", "mysqladmin ping -h localhost -proot --silent" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 20s
+
+    redis:
+        image: redis:7.2-alpine
+        container_name: redis
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 10s
+
+    connect:
+        image: debezium/connect:2.5
+        container_name: kafka-connect
+        restart: unless-stopped
+        depends_on:
+            kafka:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
+        ports:
+            - "8083:8083"
+        environment:
+            BOOTSTRAP_SERVERS: kafka:29092
+            REST_ADVERTISED_HOST_NAME: connect
+            GROUP_ID: "1"
+            CONFIG_STORAGE_TOPIC: connect-configs
+            OFFSET_STORAGE_TOPIC: connect-offsets
+            STATUS_STORAGE_TOPIC: connect-status
+            CONFIG_STORAGE_REPLICATION_FACTOR: 1
+            OFFSET_STORAGE_REPLICATION_FACTOR: 1
+            STATUS_STORAGE_REPLICATION_FACTOR: 1
+        healthcheck:
+            test: [ "CMD-SHELL", "curl -f http://localhost:8083/ || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 20s
+
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        container_name: kafka-ui
+        restart: unless-stopped
+        ports:
+            - "8989:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+            KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium
+            KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
+        depends_on:
+            kafka:
+                condition: service_healthy
+            connect:
+                condition: service_healthy
+
+#    order-service:
+#        build:
+#            context: .
+#            dockerfile: Order/docker/Dockerfile
+#        container_name: order-service
+#        restart: unless-stopped
+#        ports:
+#            - "8080:8080"
+#        depends_on:
+#            mysql:
+#                condition: service_healthy
+#            redis:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#        environment:
+#            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery
+#            SPRING_DATASOURCE_USERNAME: root
+#            SPRING_DATASOURCE_PASSWORD: root
+#            SPRING_DATA_REDIS_HOST: redis
+#            SPRING_DATA_REDIS_PORT: 6379
+#            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+#            ORDER_INTERNAL_API_KEY: ${ORDER_INTERNAL_API_KEY:-order-internal-dev-key}
+
+volumes:
+    mysql-data:
+    zookeeper-data:
+    zookeeper-log:
+    kafka-data:

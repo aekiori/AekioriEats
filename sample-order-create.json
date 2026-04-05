@@ -1,0 +1,21 @@
+{
+    "userId": 1,
+    "storeId": 100,
+    "deliveryAddress": "서울시 강남구 테헤란로 123",
+    "usedPointAmount": 1000,
+    "idempotencyKey": "order-create-001",
+    "items": [
+        {
+            "menuId": 10,
+            "menuName": "불고기버거",
+            "unitPrice": 8500,
+            "quantity": 2
+        },
+        {
+            "menuId": 20,
+            "menuName": "콜라",
+            "unitPrice": 2000,
+            "quantity": 1
+        }
+    ]
+}
