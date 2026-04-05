@@ -14,6 +14,7 @@ import com.delivery.order.service.order.UpdateOrderStatusService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,8 +41,11 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<CreateOrderResultDto> createOrder(
-        @RequestHeader("X-Idempotency-Key") @NotBlank String idempotencyKey, // todo - 이거 걍 UUID 형식으로 강제시킬까
-        @Valid @RequestBody CreateOrderDto createOrderDto
+        @RequestHeader("X-Idempotency-Key")
+        @NotBlank
+        @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
+        String idempotencyKey,
+        @RequestBody @Valid CreateOrderDto createOrderDto
     ) {
         CreateOrderResultDto response = createOrderService.createOrder(createOrderDto, idempotencyKey);
 
