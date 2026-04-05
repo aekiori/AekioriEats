@@ -20,27 +20,9 @@ public class GetOrderService {
     public OrderDetailResultDto getOrder(Long orderId) {
         Order order = orderReader.findOrder(orderId);
         List<OrderItemResultDto> items = orderItemRepository.findByOrderId(orderId).stream()
-            .map(item -> new OrderItemResultDto(
-                item.getMenuId(),
-                item.getMenuName(),
-                item.getUnitPrice(),
-                item.getQuantity(),
-                item.getLineAmount()
-            ))
+            .map(OrderItemResultDto::from)
             .toList();
 
-        return new OrderDetailResultDto(
-            order.getId(),
-            order.getUserId(),
-            order.getStoreId(),
-            order.getStatus().name(),
-            order.getDeliveryAddress(),
-            order.getTotalAmount(),
-            order.getUsedPointAmount(),
-            order.getFinalAmount(),
-            items,
-            order.getCreatedAt(),
-            order.getUpdatedAt()
-        );
+        return OrderDetailResultDto.from(order, items);
     }
 }

@@ -23,21 +23,9 @@ public class GetOrdersService {
         Page<Order> orderPage = orderReader.getOrderPage(userId, status, pageable);
 
         List<OrderSummaryResultDto> content = orderPage.getContent().stream()
-            .map(order -> new OrderSummaryResultDto(
-                order.getId(),
-                order.getStoreId(),
-                order.getStatus().name(),
-                order.getFinalAmount(),
-                order.getCreatedAt()
-            ))
+            .map(OrderSummaryResultDto::from)
             .toList();
 
-        return new OrderPageResultDto(
-            content,
-            orderPage.getNumber(),
-            orderPage.getSize(),
-            orderPage.getTotalElements(),
-            orderPage.getTotalPages()
-        );
+        return OrderPageResultDto.from(orderPage, content);
     }
 }

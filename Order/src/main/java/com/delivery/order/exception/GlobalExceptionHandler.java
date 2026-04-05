@@ -1,6 +1,7 @@
 package com.delivery.order.exception;
 
 import com.delivery.order.domain.order.exception.InvalidOrderStatusTransitionException;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.validation.FieldError;
@@ -15,24 +16,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(InvalidOrderStatusTransitionException.class)
     public ResponseEntity<ErrorResponse> handleInvalidOrderStatusTransitionException(
         InvalidOrderStatusTransitionException exception,
         HttpServletRequest request
     ) {
-        ErrorResponse response = buildErrorResponse(
+        return errorResponse(
+            HttpStatus.CONFLICT,
             request,
             "INVALID_ORDER_STATUS_TRANSITION",
             exception.getMessage(),
             null
         );
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(ApiException.class)
@@ -40,14 +42,13 @@ public class GlobalExceptionHandler {
         ApiException exception,
         HttpServletRequest request
     ) {
-        ErrorResponse response = buildErrorResponse(
+        return errorResponse(
+            exception.getStatus(),
             request,
             exception.getCode(),
             exception.getMessage(),
             null
         );
-
-        return ResponseEntity.status(exception.getStatus()).body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -61,29 +62,15 @@ public class GlobalExceptionHandler {
             .map(this::toFieldErrorDetail)
             .toList();
 
-        ErrorResponse response = buildErrorResponse(
+        String message = firstErrorMessage(errors, "Request is invalid.");
+
+        return errorResponse(
+            HttpStatus.BAD_REQUEST,
             request,
             "VALIDATION_ERROR",
-            "Request is invalid.",
+            message,
             errors
         );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
-    @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(
-        HandlerMethodValidationException exception,
-        HttpServletRequest request
-    ) {
-        ErrorResponse response = buildErrorResponse(
-            request,
-            "VALIDATION_ERROR",
-            "Request is invalid.",
-            null
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -91,59 +78,54 @@ public class GlobalExceptionHandler {
         ConstraintViolationException exception,
         HttpServletRequest request
     ) {
-        ErrorResponse response = buildErrorResponse(
+        String message = exception.getConstraintViolations().stream()
+            .map(ConstraintViolation::getMessage)
+            .findFirst()
+            .orElse("Request is invalid.");
+
+        List<ValidationException.FieldErrorDetail> errors = exception.getConstraintViolations().stream()
+            .map(violation -> new ValidationException.FieldErrorDetail(
+                violation.getPropertyPath() != null ? violation.getPropertyPath().toString() : "request",
+                violation.getMessage()
+            ))
+            .toList();
+
+        return errorResponse(
+            HttpStatus.BAD_REQUEST,
             request,
             "VALIDATION_ERROR",
-            "Request is invalid.",
-            null
+            message,
+            errors
         );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
-        MethodArgumentTypeMismatchException exception,
+    @ExceptionHandler({
+        HandlerMethodValidationException.class,
+        MethodArgumentTypeMismatchException.class,
+        MissingRequestHeaderException.class,
+        HttpMessageNotReadableException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadRequestExceptions(
+        Exception exception,
         HttpServletRequest request
     ) {
-        ErrorResponse response = buildErrorResponse(
+        return errorResponse(
+            HttpStatus.BAD_REQUEST,
             request,
             "VALIDATION_ERROR",
             "Request is invalid.",
             null
         );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<ErrorResponse> handleMissingRequestHeaderException(
-        MissingRequestHeaderException exception,
-        HttpServletRequest request
+    private ResponseEntity<ErrorResponse> errorResponse(
+        HttpStatus status,
+        HttpServletRequest request,
+        String code,
+        String message,
+        List<ValidationException.FieldErrorDetail> errors
     ) {
-        ErrorResponse response = buildErrorResponse(
-            request,
-            "VALIDATION_ERROR",
-            "Request is invalid.",
-            null
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-        HttpMessageNotReadableException exception,
-        HttpServletRequest request
-    ) {
-        ErrorResponse response = buildErrorResponse(
-            request,
-            "VALIDATION_ERROR",
-            "Request is invalid.",
-            null
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(status).body(buildErrorResponse(request, code, message, errors));
     }
 
     private ErrorResponse buildErrorResponse(
@@ -184,5 +166,22 @@ public class GlobalExceptionHandler {
             : "Invalid value.";
 
         return new ValidationException.FieldErrorDetail(fieldError.getField(), reason);
+    }
+
+    private String firstErrorMessage(
+        List<ValidationException.FieldErrorDetail> errors,
+        String defaultMessage
+    ) {
+        if (errors == null || errors.isEmpty()) {
+            return defaultMessage;
+        }
+
+        for (ValidationException.FieldErrorDetail error : new ArrayList<>(errors)) {
+            if (error.reason() != null && !error.reason().isBlank()) {
+                return error.reason();
+            }
+        }
+
+        return defaultMessage;
     }
 }

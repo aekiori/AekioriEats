@@ -3,7 +3,7 @@ package com.delivery.order.service.order;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.request.UpdateOrderStatusDto;
 import com.delivery.order.dto.response.UpdateOrderStatusResultDto;
-import com.delivery.order.service.OrderOutboxService;
+import com.delivery.order.repository.order.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class UpdateOrderStatusService {
     private final OrderReader orderReader;
-    private final OrderOutboxService orderOutboxService;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public UpdateOrderStatusResultDto updateOrderStatus(Long orderId, UpdateOrderStatusDto updateOrderStatusDto) {
@@ -27,21 +27,14 @@ public class UpdateOrderStatusService {
             orderId, currentStatus, targetStatus
         );
 
-        order.updateStatus(targetStatus);
-
-        String eventId = orderOutboxService.saveOrderStatusChanged(
-            order, currentStatus, targetStatus, updateOrderStatusDto.reason()
-        );
+        order.updateStatus(targetStatus, updateOrderStatusDto.reason());
+        Order savedOrder = orderRepository.save(order);
 
         log.info(
-            "Order status update completed. orderId={}, eventId={}, currentStatus={}, targetStatus={}",
-            orderId, eventId, currentStatus, targetStatus
+            "Order status update completed. orderId={}, currentStatus={}, targetStatus={}",
+            orderId, currentStatus, targetStatus
         );
 
-        return new UpdateOrderStatusResultDto(
-            order.getId(),
-            order.getStatus().name(),
-            order.getUpdatedAt()
-        );
+        return UpdateOrderStatusResultDto.from(savedOrder);
     }
 }

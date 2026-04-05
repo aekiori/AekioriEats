@@ -36,7 +36,7 @@ public class OutboxAdminService {
         Outbox.Status targetStatus = parseStatus(status);
 
         return outboxRepository.findByStatusOrderByCreatedAtAsc(targetStatus).stream()
-            .map(this::toOutboxResultDto)
+            .map(OutboxResultDto::from)
             .toList();
     }
 
@@ -76,12 +76,7 @@ public class OutboxAdminService {
                 outboxSmtTopic
             );
 
-            return new OutboxReplayResultDto(
-                outbox.getEventId(),
-                Outbox.Status.INIT.name(),
-                outboxSmtTopic,
-                LocalDateTime.now()
-            );
+            return OutboxReplayResultDto.from(outbox, outboxSmtTopic, LocalDateTime.now());
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -113,18 +108,5 @@ public class OutboxAdminService {
                 HttpStatus.BAD_REQUEST
             );
         }
-    }
-
-    private OutboxResultDto toOutboxResultDto(Outbox outbox) {
-        return new OutboxResultDto(
-            outbox.getId(),
-            outbox.getEventId(),
-            outbox.getAggregateType(),
-            outbox.getAggregateId(),
-            outbox.getEventType(),
-            outbox.getStatus().name(),
-            outbox.getPartitionKey(),
-            outbox.getCreatedAt()
-        );
     }
 }

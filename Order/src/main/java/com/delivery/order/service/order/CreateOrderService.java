@@ -9,7 +9,6 @@ import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
 import com.delivery.order.service.OrderIdempotencyCacheService;
-import com.delivery.order.service.OrderOutboxService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,6 @@ public class CreateOrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final OrderOutboxService orderOutboxService;
     private final OrderIdempotencyCacheService orderIdempotencyCacheService;
     private final ObjectMapper objectMapper;
 
@@ -103,13 +101,13 @@ public class CreateOrderService {
 
         Order savedOrder = saveOrder(request, totalAmount, usedPointAmount, finalAmount, idempotencyKey, requestHash);
         List<OrderItem> orderItems = saveOrderItems(savedOrder, request.items());
-        String eventId = orderOutboxService.saveOrderCreated(savedOrder, orderItems);
+        savedOrder.registerCreatedEvent(orderItems);
+        orderRepository.save(savedOrder);
 
         log.info(
-            "주문 생성 완료. orderId={}, userId={}, eventId={}, finalAmount={}",
+            "주문 생성 완료. orderId={}, userId={}, finalAmount={}",
             savedOrder.getId(),
             savedOrder.getUserId(),
-            eventId,
             savedOrder.getFinalAmount()
         );
 
@@ -183,7 +181,6 @@ public class CreateOrderService {
         return orderRepository.save(order);
     }
 
-    // @NotBlank만으로는 공백 포함 키를 방어하지 못해 trim() 처리
     private String normalizeIdempotencyKey(String idempotencyKey) {
         return idempotencyKey.trim();
     }

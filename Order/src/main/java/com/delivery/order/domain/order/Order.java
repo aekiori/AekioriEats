@@ -1,5 +1,7 @@
 package com.delivery.order.domain.order;
 
+import com.delivery.order.domain.order.event.OrderCreatedOutboxEvent;
+import com.delivery.order.domain.order.event.OrderStatusChangedOutboxEvent;
 import com.delivery.order.domain.order.exception.InvalidOrderStatusTransitionException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -7,9 +9,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Entity
@@ -26,7 +30,7 @@ import java.time.LocalDateTime;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Order {
+public class Order extends AbstractAggregateRoot<Order> {
     public enum Status {PENDING, PAID, FAILED, CANCELLED}
 
     @Id
@@ -91,16 +95,19 @@ public class Order {
         this.requestHash = requestHash;
     }
 
-    public void updateStatus(Status status) {
-        validateStatusTransition(status);
-        this.status = status;
+    public void updateStatus(Status targetStatus, String reason) {
+        validateStatusTransition(targetStatus);
+
+        Status currentStatus = this.status;
+        this.status = targetStatus;
+
+        registerEvent(OrderStatusChangedOutboxEvent.from(this, currentStatus, targetStatus, reason));
     }
 
-    /*
-        Transition 처리는원래 Service 에 있었지만,
-        DDD 상 Order 도메인 엔티티가 처리하는게 맞다.
-        여기서 도메인 전용 예외를 떨구고, UpStream layer 에서 해당 예외를 받아 별도처리.
-     */
+    public void registerCreatedEvent(List<OrderItem> items) {
+        registerEvent(OrderCreatedOutboxEvent.from(this, items));
+    }
+
     private void validateStatusTransition(Status targetStatus) {
         /*
             this.status => targetStatus 로의 변경 규칙

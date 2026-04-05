@@ -1,8 +1,8 @@
 package com.delivery.order.service;
 
 import com.delivery.order.constant.OrderEventType;
-import com.delivery.order.domain.order.Order;
-import com.delivery.order.domain.order.OrderItem;
+import com.delivery.order.domain.order.event.OrderCreatedOutboxEvent;
+import com.delivery.order.domain.order.event.OrderStatusChangedOutboxEvent;
 import com.delivery.order.domain.outbox.Outbox;
 import com.delivery.order.dto.event.OrderCreatedEventDto;
 import com.delivery.order.dto.event.OrderStatusChangedEventDto;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -27,111 +26,61 @@ public class OrderOutboxService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
-    public String saveOrderCreated(Order order, List<OrderItem> items) {
+    public void saveOrderCreated(OrderCreatedOutboxEvent event) {
         String eventId = getEventId();
-        String payload = buildOrderCreatedPayload(order, items, eventId);
+        String payload = buildOrderCreatedPayload(event, eventId);
 
-        // todo -- DDD 관점에서 아박 생성을 이 서비스가 책임지는게 맞나 더 봐야할듯
         Outbox outbox = new Outbox(
             eventId,
             Outbox.AggregateType.ORDER,
-            order.getId(),
+            event.orderId(),
             OrderEventType.ORDER_CREATED,
             payload,
             Outbox.Status.INIT,
-            String.valueOf(order.getUserId())
+            String.valueOf(event.userId())
         );
 
         outboxRepository.save(outbox);
 
-        log.info("OrderCreated Outbox 저장 완료. orderId={}, eventId={}", order.getId(), eventId);
-        return eventId;
+        log.info("OrderCreated Outbox saved. orderId={}, eventId={}", event.orderId(), eventId);
     }
 
-    public String saveOrderStatusChanged(
-        Order order,
-        Order.Status currentStatus,
-        Order.Status targetStatus,
-        String reason
-    ) {
+    public void saveOrderStatusChanged(OrderStatusChangedOutboxEvent event) {
         String eventId = getEventId();
-        String payload = buildOrderStatusChangedPayload(order, currentStatus, targetStatus, reason, eventId);
+        String payload = buildOrderStatusChangedPayload(event, eventId);
 
-        // todo -- 얘도 위와같음
         Outbox outbox = new Outbox(
             eventId,
             Outbox.AggregateType.ORDER,
-            order.getId(),
+            event.orderId(),
             OrderEventType.ORDER_STATUS_CHANGED,
             payload,
             Outbox.Status.INIT,
-            String.valueOf(order.getUserId())
+            String.valueOf(event.userId())
         );
 
         outboxRepository.save(outbox);
 
-        log.info("OrderStatusChanged Outbox 저장 완료. orderId={}, eventId={}", order.getId(), eventId);
-
-        return eventId;
+        log.info("OrderStatusChanged Outbox saved. orderId={}, eventId={}", event.orderId(), eventId);
     }
 
-    private String buildOrderCreatedPayload(
-        Order order,
-        List<OrderItem> items,
-        String eventId
-    ) {
-        OrderCreatedEventDto payload = new OrderCreatedEventDto(
-            eventId,
-            OrderEventType.ORDER_CREATED,
-            LocalDateTime.now(),
-            order.getId(),
-            order.getUserId(),
-            order.getStoreId(),
-            order.getTotalAmount(),
-            order.getUsedPointAmount(),
-            order.getFinalAmount(),
-            order.getStatus().name(),
-            items.stream()
-                .map(item -> new OrderCreatedEventDto.OrderCreatedItemDto(
-                    item.getMenuId(),
-                    item.getMenuName(),
-                    item.getUnitPrice(),
-                    item.getQuantity(),
-                    item.getLineAmount()
-                ))
-                .toList()
-        );
+    private String buildOrderCreatedPayload(OrderCreatedOutboxEvent event, String eventId) {
+        OrderCreatedEventDto payload = OrderCreatedEventDto.from(event, eventId, LocalDateTime.now());
 
-        return serializePayload(payload, order.getId());
+        return serializePayload(payload, event.orderId());
     }
 
-    private String buildOrderStatusChangedPayload(
-        Order order,
-        Order.Status currentStatus,
-        Order.Status targetStatus,
-        String reason,
-        String eventId
-    ) {
-        OrderStatusChangedEventDto payload = new OrderStatusChangedEventDto(
-            eventId,
-            OrderEventType.ORDER_STATUS_CHANGED,
-            LocalDateTime.now(),
-            order.getId(),
-            order.getUserId(),
-            order.getStoreId(),
-            currentStatus.name(),
-            targetStatus.name(),
-            reason
-        );
+    private String buildOrderStatusChangedPayload(OrderStatusChangedOutboxEvent event, String eventId) {
+        OrderStatusChangedEventDto payload = OrderStatusChangedEventDto.from(event, eventId, LocalDateTime.now());
 
-        return serializePayload(payload, order.getId());
+        return serializePayload(payload, event.orderId());
     }
 
     private String serializePayload(Object payload, Long orderId) {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (Exception exception) {
-            log.error("Outbox payload 생성 실패. orderId={}", orderId, exception);
+            log.error("Outbox payload serialization failed. orderId={}", orderId, exception);
             throw new ApiException(
                 "OUTBOX_PAYLOAD_SERIALIZATION_ERROR",
                 "Outbox payload 생성에 실패했다.",
@@ -140,8 +89,7 @@ public class OrderOutboxService {
         }
     }
 
-    private String getEventId()
-    {
+    private String getEventId() {
         return UUID.randomUUID().toString();
     }
 }
