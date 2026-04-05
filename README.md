@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <p align="center">
   <img src="photo/1.png" width="45%" />
   <img src="photo/2.png" width="45%" />
@@ -95,3 +96,7 @@ curl http://localhost:8083/connectors/order-outbox-connector/status
 
 - [Kafka / Debezium 운영 정리](docs/kafka-debezium.md)
 - [Order 서비스 문서](Order/README.md)
+=======
+# AekioriEats
+포폴/학습용 MSA DDD Spring 배달서비스
+>>>>>>> f81bbdb7e843d6782b260e77bcad1964863fc706

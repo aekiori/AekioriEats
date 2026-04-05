@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Gradle
 .gradle/
 build/
@@ -11,6 +12,21 @@ build/
 out/
 
 # Spring Boot
+=======
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+>>>>>>> f81bbdb7e843d6782b260e77bcad1964863fc706
 *.jar
 *.war
 *.nar
@@ -19,6 +35,7 @@ out/
 *.tar.gz
 *.rar
 
+<<<<<<< HEAD
 # Logs
 logs/
 *.log
@@ -38,3 +55,8 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+=======
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+>>>>>>> f81bbdb7e843d6782b260e77bcad1964863fc706
