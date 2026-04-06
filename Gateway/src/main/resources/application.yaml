@@ -1,0 +1,32 @@
+server:
+    port: ${SERVER_PORT:8088}
+
+spring:
+    application:
+        name: Gateway
+    cloud:
+        gateway:
+            routes:
+                - id: auth-service
+                  uri: ${GATEWAY_AUTH_SERVICE_URI:http://localhost:8083}
+                  predicates:
+                      - Path=/api/v1/auth/**
+                - id: user-service
+                  uri: ${GATEWAY_USER_SERVICE_URI:http://localhost:8082}
+                  predicates:
+                      - Path=/api/v1/users/**
+                - id: order-service
+                  uri: ${GATEWAY_ORDER_SERVICE_URI:http://localhost:8081}
+                  predicates:
+                      - Path=/api/v1/orders/**
+
+gateway:
+    auth:
+        jwt:
+            secret: ${AUTH_JWT_SECRET:auth-super-secret-auth-super-secret-2026}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info
