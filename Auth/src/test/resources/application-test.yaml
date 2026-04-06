@@ -1,0 +1,22 @@
+spring:
+    datasource:
+        url: jdbc:h2:mem:auth;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+        username: sa
+        password:
+        driver-class-name: org.h2.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        database-platform: org.hibernate.dialect.H2Dialect
+
+    flyway:
+        enabled: true
+
+auth:
+    jwt:
+        secret: auth-test-secret-auth-test-secret-2026
+        issuer: aekiori-eats
+        access-token-expiration-seconds: 1800
+        refresh-token-expiration-seconds: 1209600

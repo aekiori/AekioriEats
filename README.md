@@ -23,12 +23,12 @@
 - **Saga Pattern**을 활용한 분산 트랜잭션 관리
 - **Idempotency(멱등성)** 보장 및 서비스 간 결합도 최소화
 - **Redis** 기반 분산락 및 캐싱 전략
+- **API Gateway** (Spring Cloud Gateway) 기반 공통 인증/인가/라우팅
+- **Bloom Filter** 기반 이메일 중복 확인 성능 최적화 PoC
 - **Distributed Tracing** (Zipkin)으로 서비스 간 요청 흐름 추적
 - **Circuit Breaker** (Resilience4j)로 서비스 간 장애 전파 방지
 - **CQRS** - 조회/명령 분리
 - **Elasticsearch** 기반 메뉴/상점 검색
-
-## 
 
 <p align="center">
   <img src="photo/3.png" width="45%" />
@@ -39,8 +39,8 @@
 
 ### 우선 구현
 - `Order` - **개발 중**
-- `User`
-- `Auth`
+- `User`- **개발 중**
+- `Auth`- **개발 중**
 - `Payment`
 - `Point`
 - `Store`
@@ -95,6 +95,3 @@ curl http://localhost:8083/connectors/order-outbox-connector/status
 
 - [Kafka / Debezium 운영 정리](docs/kafka-debezium.md)
 - [Order 서비스 문서](Order/README.md)
-=======
-# AekioriEats
-포폴/학습용 MSA DDD Spring 배달서비스
