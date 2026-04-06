@@ -20,3 +20,5 @@ auth:
         issuer: aekiori-eats
         access-token-expiration-seconds: 1800
         refresh-token-expiration-seconds: 1209600
+    bloom:
+        enabled: false

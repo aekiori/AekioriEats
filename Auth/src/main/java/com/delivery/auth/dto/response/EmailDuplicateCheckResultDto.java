@@ -1,4 +1,4 @@
-package com.delivery.user.dto.response;
+package com.delivery.auth.dto.response;
 
 public record EmailDuplicateCheckResultDto(
     String email,

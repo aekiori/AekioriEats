@@ -2,15 +2,20 @@ package com.delivery.auth.service;
 
 import com.delivery.auth.domain.token.RefreshToken;
 import com.delivery.auth.domain.user.AuthUser;
+import com.delivery.auth.domain.user.event.UserCreatedOutboxEvent;
 import com.delivery.auth.dto.request.LoginRequestDto;
 import com.delivery.auth.dto.request.LogoutRequestDto;
 import com.delivery.auth.dto.request.RefreshTokenRequestDto;
+import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
+import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
 import com.delivery.auth.exception.ApiException;
 import com.delivery.auth.repository.token.RefreshTokenRepository;
 import com.delivery.auth.repository.user.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,13 +32,63 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final AuthEmailBloomFilter authEmailBloomFilter;
 
     @Value("${auth.jwt.refresh-token-expiration-seconds:1209600}")
     private long refreshTokenExpirationSeconds;
 
+    @Transactional(readOnly = true)
+    public EmailDuplicateCheckResultDto checkEmailDuplicate(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        /**
+         * note -- 이메일 중복검사는 캐싱을 둘까? 얼마나?
+         * 차피 index range scan 만 해서 ㅈㄴ 간단할거같은데 굳이 redis 들락날락거릴 필요 없을수도.
+         */
+
+        if (!authEmailBloomFilter.shouldCheckDb(normalizedEmail)) {
+            return EmailDuplicateCheckResultDto.from(normalizedEmail, false);
+        }
+
+        boolean exists = authUserRepository.existsByEmail(normalizedEmail);
+
+        return EmailDuplicateCheckResultDto.from(normalizedEmail, exists);
+    }
+
+    @Transactional
+    public AuthTokenResponseDto signup(SignupRequestDto request) {
+        String normalizedEmail = normalizeEmail(request.email());
+
+        if (authEmailBloomFilter.shouldCheckDb(normalizedEmail) && authUserRepository.existsByEmail(normalizedEmail)) {
+            throw new ApiException(
+                "AUTH_EMAIL_ALREADY_EXISTS",
+                "Email is already registered.",
+                HttpStatus.CONFLICT
+            );
+        }
+
+        AuthUser authUser;
+        try {
+            authUser = authUserRepository.save(
+                AuthUser.createForSignup(normalizedEmail, passwordEncoder.encode(request.password()))
+            );
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(
+                "AUTH_EMAIL_ALREADY_EXISTS",
+                "Email is already registered.",
+                HttpStatus.CONFLICT
+            );
+        }
+
+        authEmailBloomFilter.put(normalizedEmail);
+        applicationEventPublisher.publishEvent(UserCreatedOutboxEvent.from(authUser));
+
+        return issueTokens(authUser);
+    }
+
     @Transactional
     public AuthTokenResponseDto login(LoginRequestDto request) {
-        String normalizedEmail = request.email().toLowerCase(Locale.ROOT);
+        String normalizedEmail = normalizeEmail(request.email());
 
         AuthUser authUser = authUserRepository.findByEmail(normalizedEmail)
             .orElseThrow(() -> new ApiException(
@@ -113,5 +168,9 @@ public class AuthService {
             "Bearer",
             jwtTokenProvider.getAccessTokenExpirationSeconds()
         );
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

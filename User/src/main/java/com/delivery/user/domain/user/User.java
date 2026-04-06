@@ -51,9 +51,6 @@ public class User {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 100)
-    private String passwordHash;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Status status;
@@ -66,14 +63,13 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public User(String email, String passwordHash) {
+    public User(String email) {
         this.email = email;
-        this.passwordHash = passwordHash;
         this.status = Status.ACTIVE;
     }
 
-    public static User create(String email, String passwordHash) {
-        return new User(email, passwordHash);
+    public static User create(String email) {
+        return new User(email);
     }
 
     public void updateStatus(Status targetStatus) {

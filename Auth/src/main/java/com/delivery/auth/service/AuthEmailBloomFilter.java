@@ -1,4 +1,4 @@
-package com.delivery.user.service.user;
+package com.delivery.auth.service;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -17,12 +17,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Component
-public class UserEmailBloomFilter {
+public class AuthEmailBloomFilter {
     private static final String LOAD_SQL = """
-        SELECT id, email
-        FROM users
-        WHERE id > ?
-        ORDER BY id ASC
+        SELECT user_id, email
+        FROM auth_users
+        WHERE user_id > ?
+        ORDER BY user_id ASC
         LIMIT ?
         """;
 
@@ -32,12 +32,12 @@ public class UserEmailBloomFilter {
     private final int warmupBatchSize;
     private final AtomicBoolean warmedUp = new AtomicBoolean(false);
 
-    public UserEmailBloomFilter(
+    public AuthEmailBloomFilter(
         JdbcTemplate jdbcTemplate,
-        @Value("${user.bloom.enabled:true}") boolean enabled,
-        @Value("${user.bloom.expected-insertions:5000000}") long expectedInsertions,
-        @Value("${user.bloom.fpp:0.01}") double fpp,
-        @Value("${user.bloom.warmup-batch-size:10000}") int warmupBatchSize
+        @Value("${auth.bloom.enabled:true}") boolean enabled,
+        @Value("${auth.bloom.expected-insertions:5000000}") long expectedInsertions,
+        @Value("${auth.bloom.fpp:0.01}") double fpp,
+        @Value("${auth.bloom.warmup-batch-size:10000}") int warmupBatchSize
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.enabled = enabled;
@@ -62,11 +62,11 @@ public class UserEmailBloomFilter {
         long startedAt = System.currentTimeMillis();
 
         try {
-            long lastId = 0L;
+            long lastUserId = 0L;
             long loaded = 0L;
 
             while (true) {
-                List<Map<String, Object>> rows = jdbcTemplate.queryForList(LOAD_SQL, lastId, warmupBatchSize);
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList(LOAD_SQL, lastUserId, warmupBatchSize);
 
                 if (rows.isEmpty()) {
                     break;
@@ -74,14 +74,13 @@ public class UserEmailBloomFilter {
 
                 for (Map<String, Object> row : rows) {
                     Object email = row.get("email");
-
                     if (email != null) {
                         bloomFilter.put(email.toString().trim().toLowerCase());
                     }
 
-                    Number id = (Number) row.get("id");
-                    if (id != null) {
-                        lastId = id.longValue();
+                    Number userId = (Number) row.get("user_id");
+                    if (userId != null) {
+                        lastUserId = userId.longValue();
                     }
                 }
 
@@ -90,14 +89,14 @@ public class UserEmailBloomFilter {
 
             warmedUp.set(true);
             log.info(
-                "UserEmailBloomFilter warm-up completed. loaded={}, elapsedMs={}",
+                "AuthEmailBloomFilter warm-up completed. loaded={}, elapsedMs={}",
                 loaded,
                 System.currentTimeMillis() - startedAt
             );
         } catch (Exception exception) {
             warmedUp.set(false);
             log.warn(
-                "UserEmailBloomFilter warm-up failed. Fallback to DB check only. elapsedMs={}",
+                "AuthEmailBloomFilter warm-up failed. Fallback to DB check only. elapsedMs={}",
                 System.currentTimeMillis() - startedAt,
                 exception
             );

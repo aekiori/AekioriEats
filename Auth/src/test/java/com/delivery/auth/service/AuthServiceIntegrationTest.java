@@ -4,7 +4,9 @@ import com.delivery.auth.domain.token.RefreshToken;
 import com.delivery.auth.dto.request.LoginRequestDto;
 import com.delivery.auth.dto.request.LogoutRequestDto;
 import com.delivery.auth.dto.request.RefreshTokenRequestDto;
+import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
+import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
 import com.delivery.auth.exception.ApiException;
 import com.delivery.auth.repository.token.RefreshTokenRepository;
 import io.jsonwebtoken.Claims;
@@ -42,6 +44,7 @@ class AuthServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("delete from outbox");
         jdbcTemplate.execute("delete from auth_users");
         refreshTokenRepository.deleteAll();
 
@@ -59,7 +62,99 @@ class AuthServiceIntegrationTest {
     @AfterEach
     void tearDown() {
         refreshTokenRepository.deleteAll();
+        jdbcTemplate.execute("delete from outbox");
         jdbcTemplate.execute("delete from auth_users");
+    }
+
+    @Test
+    void signup_creates_auth_user_and_user_created_outbox() {
+        AuthTokenResponseDto tokenResponse = authService.signup(
+            new SignupRequestDto("new-user@example.com", "password1234")
+        );
+
+        assertThat(tokenResponse.accessToken()).isNotBlank();
+        assertThat(tokenResponse.refreshToken()).isNotBlank();
+
+        Long userId = jdbcTemplate.queryForObject(
+            "select user_id from auth_users where email = ?",
+            Long.class,
+            "new-user@example.com"
+        );
+
+        assertThat(userId).isNotNull();
+
+        String status = jdbcTemplate.queryForObject(
+            "select status from auth_users where user_id = ?",
+            String.class,
+            userId
+        );
+        String role = jdbcTemplate.queryForObject(
+            "select role from auth_users where user_id = ?",
+            String.class,
+            userId
+        );
+
+        assertThat(status).isEqualTo("ACTIVE");
+        assertThat(role).isEqualTo("USER");
+
+        String outboxEventType = jdbcTemplate.queryForObject(
+            "select event_type from outbox where aggregate_id = ?",
+            String.class,
+            userId
+        );
+        String outboxStatus = jdbcTemplate.queryForObject(
+            "select status from outbox where aggregate_id = ?",
+            String.class,
+            userId
+        );
+        String partitionKey = jdbcTemplate.queryForObject(
+            "select partition_key from outbox where aggregate_id = ?",
+            String.class,
+            userId
+        );
+        String payload = jdbcTemplate.queryForObject(
+            "select payload from outbox where aggregate_id = ?",
+            String.class,
+            userId
+        );
+
+        assertThat(outboxEventType).isEqualTo("UserCreated");
+        assertThat(outboxStatus).isEqualTo("INIT");
+        assertThat(partitionKey).isEqualTo(String.valueOf(userId));
+        assertThat(payload).contains("UserCreated");
+        assertThat(payload).contains("new-user@example.com");
+    }
+
+    @Test
+    void signup_fails_when_email_is_duplicated() {
+        authService.signup(new SignupRequestDto("dup-user@example.com", "password1234"));
+
+        assertThatThrownBy(() -> authService.signup(new SignupRequestDto("dup-user@example.com", "password1234")))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("Email is already registered.");
+
+        Long outboxCount = jdbcTemplate.queryForObject(
+            "select count(*) from outbox where event_type = 'UserCreated'",
+            Long.class
+        );
+
+        assertThat(outboxCount).isEqualTo(1L);
+    }
+
+    @Test
+    void check_email_duplicate_returns_true_when_email_exists() {
+        EmailDuplicateCheckResultDto result = authService.checkEmailDuplicate("auth-user@example.com");
+
+        assertThat(result.email()).isEqualTo("auth-user@example.com");
+        assertThat(result.exists()).isTrue();
+    }
+
+    @Test
+    void check_email_duplicate_returns_false_when_email_not_exists() {
+        EmailDuplicateCheckResultDto result = authService.checkEmailDuplicate("no-user@example.com");
+
+        assertThat(result.email()).isEqualTo("no-user@example.com");
+        assertThat(result.exists()).isFalse();
     }
 
     @Test

@@ -10,7 +10,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,32 +24,28 @@ class CreateUserServiceIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
     @AfterEach
     void tearDown() {
         userRepository.deleteAll();
     }
 
     @Test
-    void create_user_encrypts_password_with_bcrypt() {
+    void create_user_saves_email_and_active_status() {
         CreateUserResultDto result = userService.createUser(
-            new CreateUserDto("aekiori@example.com", "aekiori02")
+            new CreateUserDto("aekiori@example.com")
         );
 
         User savedUser = userRepository.findById(result.userId()).orElseThrow();
 
         assertThat(savedUser.getEmail()).isEqualTo("aekiori@example.com");
-        assertThat(savedUser.getPasswordHash()).isNotEqualTo("aekiori02");
-        assertThat(passwordEncoder.matches("aekiori02", savedUser.getPasswordHash())).isTrue();
+        assertThat(savedUser.getStatus()).isEqualTo(User.Status.ACTIVE);
     }
 
     @Test
     void create_user_throws_conflict_when_email_is_duplicated() {
-        userService.createUser(new CreateUserDto("aekioridup@example.com", "aekiori02"));
+        userService.createUser(new CreateUserDto("aekioridup@example.com"));
 
-        assertThatThrownBy(() -> userService.createUser(new CreateUserDto("aekioridup@example.com", "aekiori26")))
+        assertThatThrownBy(() -> userService.createUser(new CreateUserDto("aekioridup@example.com")))
             .isInstanceOf(ApiException.class)
             .hasMessageContaining("Email is already registered.");
     }

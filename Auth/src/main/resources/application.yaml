@@ -23,9 +23,24 @@ spring:
         baseline-on-migrate: true
         baseline-version: 0
 
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        consumer:
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 auth:
     jwt:
         secret: ${AUTH_JWT_SECRET:auth-super-secret-auth-super-secret-2026}
         issuer: ${AUTH_JWT_ISSUER:aekiori-eats}
         access-token-expiration-seconds: ${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:1800}
         refresh-token-expiration-seconds: ${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}
+    bloom:
+        enabled: ${AUTH_BLOOM_ENABLED:true}
+        expected-insertions: ${AUTH_BLOOM_EXPECTED_INSERTIONS:5000000}
+        fpp: ${AUTH_BLOOM_FPP:0.01}
+        warmup-batch-size: ${AUTH_BLOOM_WARMUP_BATCH_SIZE:10000}
