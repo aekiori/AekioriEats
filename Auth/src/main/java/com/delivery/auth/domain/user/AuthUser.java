@@ -1,5 +1,6 @@
 package com.delivery.auth.domain.user;
 
+import com.delivery.auth.domain.user.event.UserCreatedOutboxEvent;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -13,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -27,7 +29,7 @@ import java.time.LocalDateTime;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class AuthUser {
+public class AuthUser extends AbstractAggregateRoot<AuthUser> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
@@ -101,5 +103,9 @@ public class AuthUser {
 
     public boolean isActive() {
         return "ACTIVE".equalsIgnoreCase(status);
+    }
+
+    public void registerCreatedEvent() {
+        registerEvent(UserCreatedOutboxEvent.from(this));
     }
 }

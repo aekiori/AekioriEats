@@ -20,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -67,7 +69,7 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    void signup_creates_auth_user_and_user_created_outbox() {
+    void signup_creates_auth_user_and_user_created_outbox() throws Exception {
         AuthTokenResponseDto tokenResponse = authService.signup(
             new SignupRequestDto("new-user@example.com", "password1234")
         );
@@ -123,6 +125,19 @@ class AuthServiceIntegrationTest {
         assertThat(partitionKey).isEqualTo(String.valueOf(userId));
         assertThat(payload).contains("UserCreated");
         assertThat(payload).contains("new-user@example.com");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode payloadNode = objectMapper.readTree(payload);
+        if (payloadNode.isTextual()) {
+            payloadNode = objectMapper.readTree(payloadNode.asText());
+        }
+        int schemaVersion = payloadNode.path("schemaVersion").isMissingNode()
+            ? payloadNode.path("schema_version").asInt(-1)
+            : payloadNode.path("schemaVersion").asInt(-1);
+        boolean hasOccurredAt = payloadNode.hasNonNull("occurredAt") || payloadNode.hasNonNull("occurred_at");
+
+        assertThat(schemaVersion).isEqualTo(1);
+        assertThat(hasOccurredAt).isTrue();
     }
 
     @Test

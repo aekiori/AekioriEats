@@ -80,3 +80,27 @@
 ```cmd
 .\gradlew.bat :Auth:test
 ```
+
+## Auth ↔ User 이벤트 설계 (2026-04)
+- 회원가입 책임은 `Auth`가 가진다.
+- `Auth`는 회원가입 성공 시 Outbox에 `UserCreated` 이벤트를 적재한다.
+- `User`는 이 이벤트를 소비해서 로컬 `users` projection row를 만든다.
+
+### 이벤트 Envelope
+```json
+{
+  "eventId": "uuid",
+  "eventType": "UserCreated",
+  "schemaVersion": 1,
+  "occurredAt": "2026-04-07T08:00:00",
+  "userId": 1,
+  "email": "user@example.com",
+  "status": "ACTIVE"
+}
+```
+
+### 처리 원칙
+- `eventId`: 중복 소비 추적/디버깅용으로 필수
+- `schemaVersion`: 이벤트 포맷 진화 대비용
+- `occurredAt`: 비즈니스 이벤트 발생 시점 추적용
+- 생성 이벤트(`UserCreated`)는 생성 통로로만 사용하고, 데이터 정정은 별도 이벤트로 분리한다.
