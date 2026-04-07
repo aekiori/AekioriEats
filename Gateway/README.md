@@ -10,7 +10,7 @@
 - `8088`
 
 ## 기본 라우팅 대상
-- Auth: `http://localhost:8083`
+- Auth: `http://localhost:8084`
 - User: `http://localhost:8082`
 - Order: `http://localhost:8081`
 

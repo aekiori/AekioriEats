@@ -8,7 +8,7 @@ spring:
         gateway:
             routes:
                 - id: auth-service
-                  uri: ${GATEWAY_AUTH_SERVICE_URI:http://localhost:8083}
+                  uri: ${GATEWAY_AUTH_SERVICE_URI:http://localhost:8084}
                   predicates:
                       - Path=/api/v1/auth/**
                 - id: user-service
