@@ -32,3 +32,21 @@ spring:
         producer:
             key-serializer: org.apache.kafka.common.serialization.StringSerializer
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+user:
+    event:
+        source-topic: ${USER_EVENT_SOURCE_TOPIC:delivery.delivery_auth.outbox}
+        smt-topic: ${USER_EVENT_SMT_TOPIC:outbox.event.USER}
+        user-created-consumer-group: ${USER_EVENT_USER_CREATED_CONSUMER_GROUP:user-created-projection}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus
+    metrics:
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+        tags:
+            application: ${spring.application.name}

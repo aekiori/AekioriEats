@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,10 +63,8 @@ public class GlobalExceptionHandler {
 
         String message = firstErrorMessage(errors, "Request is invalid.");
 
-        return errorResponse(
-            HttpStatus.BAD_REQUEST,
+        return validationError(
             request,
-            "VALIDATION_ERROR",
             message,
             errors
         );
@@ -90,13 +87,7 @@ public class GlobalExceptionHandler {
             ))
             .toList();
 
-        return errorResponse(
-            HttpStatus.BAD_REQUEST,
-            request,
-            "VALIDATION_ERROR",
-            message,
-            errors
-        );
+        return validationError(request, message, errors);
     }
 
     @ExceptionHandler({
@@ -109,13 +100,15 @@ public class GlobalExceptionHandler {
         Exception exception,
         HttpServletRequest request
     ) {
-        return errorResponse(
-            HttpStatus.BAD_REQUEST,
-            request,
-            "VALIDATION_ERROR",
-            "Request is invalid.",
-            null
-        );
+        return validationError(request, "Request is invalid.", null);
+    }
+
+    private ResponseEntity<ErrorResponse> validationError(
+        HttpServletRequest request,
+        String message,
+        List<ValidationException.FieldErrorDetail> errors
+    ) {
+        return errorResponse(HttpStatus.BAD_REQUEST, request, "VALIDATION_ERROR", message, errors);
     }
 
     private ResponseEntity<ErrorResponse> errorResponse(
@@ -176,7 +169,7 @@ public class GlobalExceptionHandler {
             return defaultMessage;
         }
 
-        for (ValidationException.FieldErrorDetail error : new ArrayList<>(errors)) {
+        for (ValidationException.FieldErrorDetail error : errors) {
             if (error.reason() != null && !error.reason().isBlank()) {
                 return error.reason();
             }

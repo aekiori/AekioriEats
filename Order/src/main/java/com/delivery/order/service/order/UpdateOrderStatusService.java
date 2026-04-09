@@ -15,10 +15,33 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateOrderStatusService {
     private final OrderReader orderReader;
     private final OrderRepository orderRepository;
+    private final OrderAuthorizationService orderAuthorizationService;
 
     @Transactional
     public UpdateOrderStatusResultDto updateOrderStatus(Long orderId, UpdateOrderStatusDto updateOrderStatusDto) {
         Order order = orderReader.findOrder(orderId);
+        return updateOrderStatus(order, updateOrderStatusDto);
+    }
+
+    @Transactional
+    public UpdateOrderStatusResultDto updateOrderStatus(
+        Long orderId,
+        UpdateOrderStatusDto updateOrderStatusDto,
+        long authenticatedUserId,
+        String authenticatedUserRole
+    ) {
+        Order order = orderReader.findOrder(orderId);
+        orderAuthorizationService.requireOrderOwnerOrAdmin(
+            authenticatedUserId,
+            order.getUserId(),
+            authenticatedUserRole
+        );
+
+        return updateOrderStatus(order, updateOrderStatusDto);
+    }
+
+    private UpdateOrderStatusResultDto updateOrderStatus(Order order, UpdateOrderStatusDto updateOrderStatusDto) {
+        Long orderId = order.getId();
         Order.Status currentStatus = order.getStatus();
         Order.Status targetStatus = updateOrderStatusDto.status();
 

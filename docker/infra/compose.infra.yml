@@ -1,0 +1,175 @@
+name: aekiorieats
+
+x-infra-defaults: &infra-defaults
+    restart: unless-stopped
+
+x-healthcheck-defaults: &healthcheck-defaults
+    interval: ${HC_INTERVAL}
+    timeout: ${HC_TIMEOUT}
+    retries: ${HC_RETRIES}
+    start_period: ${HC_START_PERIOD}
+
+services:
+    zookeeper:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/zookeeper.Dockerfile
+        container_name: zookeeper
+        environment:
+            ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT}
+        volumes:
+            - zookeeper-data:/var/lib/zookeeper/data
+            - zookeeper-log:/var/lib/zookeeper/log
+
+    kafka:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/kafka.Dockerfile
+        container_name: kafka
+        depends_on:
+            - zookeeper
+        ports:
+            - "${KAFKA_EXTERNAL_LOCAL_PORT}:${KAFKA_EXTERNAL_LOCAL_PORT}"
+            - "${KAFKA_EXTERNAL_K8S_PORT}:${KAFKA_EXTERNAL_K8S_PORT}"
+            - "${KAFKA_INTERNAL_BROKER_PORT}:${KAFKA_INTERNAL_BROKER_PORT}"
+        environment:
+            KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_CLIENT_PORT}
+            KAFKA_LISTENERS: INTERNAL://0.0.0.0:${KAFKA_INTERNAL_BROKER_PORT},EXTERNAL_LOCAL://0.0.0.0:${KAFKA_EXTERNAL_LOCAL_PORT},EXTERNAL_K8S://0.0.0.0:${KAFKA_EXTERNAL_K8S_PORT}
+            KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:${KAFKA_INTERNAL_BROKER_PORT},EXTERNAL_LOCAL://${KAFKA_EXTERNAL_LOCAL_HOST}:${KAFKA_EXTERNAL_LOCAL_PORT},EXTERNAL_K8S://${KAFKA_EXTERNAL_K8S_HOST}:${KAFKA_EXTERNAL_K8S_PORT}
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL_LOCAL:PLAINTEXT,EXTERNAL_K8S:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
+            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: ${KAFKA_TRANSACTION_STATE_LOG_MIN_ISR}
+        volumes:
+            - kafka-data:/var/lib/kafka/data
+        healthcheck:
+            <<: *healthcheck-defaults
+            test: [ "CMD-SHELL", "cub kafka-ready -b localhost:${KAFKA_EXTERNAL_LOCAL_PORT} 1 20" ]
+            timeout: ${KAFKA_HC_TIMEOUT}
+
+    mysql:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/mysql.Dockerfile
+        container_name: mysql
+        ports:
+            - "${MYSQL_PORT}:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+        command:
+            - --server-id=${MYSQL_SERVER_ID}
+            - --log-bin=mysql-bin
+            - --binlog-format=${MYSQL_BINLOG_FORMAT}
+        volumes:
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            <<: *healthcheck-defaults
+            test: [ "CMD-SHELL", "mysqladmin ping -h localhost -p${MYSQL_ROOT_PASSWORD} --silent" ]
+
+    redis:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/redis.Dockerfile
+        container_name: redis
+        ports:
+            - "${REDIS_PORT}:6379"
+        healthcheck:
+            <<: *healthcheck-defaults
+            test: [ "CMD", "redis-cli", "ping" ]
+            start_period: ${REDIS_HC_START_PERIOD}
+
+    connect:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/connect.Dockerfile
+        container_name: kafka-connect
+        depends_on:
+            kafka:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
+        ports:
+            - "${CONNECT_PORT}:8083"
+        environment:
+            BOOTSTRAP_SERVERS: kafka:${KAFKA_INTERNAL_BROKER_PORT}
+            REST_ADVERTISED_HOST_NAME: connect
+            GROUP_ID: ${CONNECT_GROUP_ID}
+            CONFIG_STORAGE_TOPIC: ${CONNECT_CONFIG_STORAGE_TOPIC}
+            OFFSET_STORAGE_TOPIC: ${CONNECT_OFFSET_STORAGE_TOPIC}
+            STATUS_STORAGE_TOPIC: ${CONNECT_STATUS_STORAGE_TOPIC}
+            CONFIG_STORAGE_REPLICATION_FACTOR: ${CONNECT_STORAGE_REPLICATION_FACTOR}
+            OFFSET_STORAGE_REPLICATION_FACTOR: ${CONNECT_STORAGE_REPLICATION_FACTOR}
+            STATUS_STORAGE_REPLICATION_FACTOR: ${CONNECT_STORAGE_REPLICATION_FACTOR}
+        healthcheck:
+            <<: *healthcheck-defaults
+            test: [ "CMD-SHELL", "curl -f http://localhost:8083/ || exit 1" ]
+
+    kafka-ui:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/kafka-ui.Dockerfile
+        container_name: kafka-ui
+        ports:
+            - "${KAFKA_UI_PORT}:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: ${KAFKA_UI_CLUSTER_NAME}
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:${KAFKA_INTERNAL_BROKER_PORT}
+            KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium
+            KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
+        depends_on:
+            kafka:
+                condition: service_healthy
+            connect:
+                condition: service_healthy
+
+    prometheus:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/prometheus.Dockerfile
+        container_name: prometheus
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME}
+            - --storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE}
+        ports:
+            - "${PROMETHEUS_PORT}:9090"
+        volumes:
+            - prometheus-data:/prometheus
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
+    grafana:
+        <<: *infra-defaults
+        build:
+            context: ../..
+            dockerfile: docker/infra/dockerfile/grafana.Dockerfile
+        container_name: grafana
+        ports:
+            - "${GRAFANA_PORT}:3000"
+        depends_on:
+            - prometheus
+        environment:
+            GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+            GF_USERS_ALLOW_SIGN_UP: ${GRAFANA_ALLOW_SIGN_UP}
+        volumes:
+            - grafana-data:/var/lib/grafana
+
+volumes:
+    mysql-data:
+    zookeeper-data:
+    zookeeper-log:
+    kafka-data:
+    prometheus-data:
+    grafana-data:

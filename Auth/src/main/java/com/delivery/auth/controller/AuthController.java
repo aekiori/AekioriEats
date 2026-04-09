@@ -7,6 +7,7 @@ import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
 import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
 import com.delivery.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,13 +35,20 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthTokenResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request));
+    public ResponseEntity<AuthTokenResponseDto> signup(
+        @Valid @RequestBody SignupRequestDto request,
+        HttpServletRequest httpServletRequest
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(authService.signup(request, resolveClientIp(httpServletRequest)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthTokenResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthTokenResponseDto> login(
+        @Valid @RequestBody LoginRequestDto request,
+        HttpServletRequest httpServletRequest
+    ) {
+        return ResponseEntity.ok(authService.login(request, resolveClientIp(httpServletRequest)));
     }
 
     @PostMapping("/refresh")
@@ -53,5 +61,20 @@ public class AuthController {
         authService.logout(request);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp.trim();
+        }
+
+        String remoteAddr = request.getRemoteAddr();
+        return remoteAddr != null ? remoteAddr : "unknown";
     }
 }

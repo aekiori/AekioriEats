@@ -15,11 +15,27 @@ import java.util.List;
 public class GetOrderService {
     private final OrderReader orderReader;
     private final OrderItemRepository orderItemRepository;
+    private final OrderAuthorizationService orderAuthorizationService;
 
     @Transactional(readOnly = true)
     public OrderDetailResultDto getOrder(Long orderId) {
         Order order = orderReader.findOrder(orderId);
-        List<OrderItemResultDto> items = orderItemRepository.findByOrderId(orderId).stream()
+        return buildOrderDetail(order);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailResultDto getOrder(Long orderId, long authenticatedUserId, String authenticatedUserRole) {
+        Order order = orderReader.findOrder(orderId);
+        orderAuthorizationService.requireOrderOwnerOrAdmin(
+            authenticatedUserId,
+            order.getUserId(),
+            authenticatedUserRole
+        );
+        return buildOrderDetail(order);
+    }
+
+    private OrderDetailResultDto buildOrderDetail(Order order) {
+        List<OrderItemResultDto> items = orderItemRepository.findByOrderId(order.getId()).stream()
             .map(OrderItemResultDto::from)
             .toList();
 

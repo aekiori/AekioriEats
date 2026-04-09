@@ -33,14 +33,11 @@ public class OutboxStatusService {
 
     @Transactional
     public boolean markPublishedIfInit(String eventId) {
-        Outbox outbox = outboxRepository.findByEventId(eventId).orElse(null);
-
-        if (outbox == null || outbox.getStatus() != Outbox.Status.INIT) {
-            return false;
-        }
-
-        outbox.markPublished();
-        return true;
+        return outboxRepository.updateStatusIfCurrent(
+            eventId,
+            Outbox.Status.INIT,
+            Outbox.Status.PUBLISHED
+        ) > 0;
     }
 
     private Outbox findOutbox(String eventId) {

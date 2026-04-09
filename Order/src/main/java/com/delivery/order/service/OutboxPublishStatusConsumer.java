@@ -1,5 +1,6 @@
 package com.delivery.order.service;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.slf4j.Logger;
@@ -12,23 +13,16 @@ import tools.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 
 @Component
+@RequiredArgsConstructor
 public class OutboxPublishStatusConsumer {
     private static final Logger log = LoggerFactory.getLogger(OutboxPublishStatusConsumer.class);
 
     private final OutboxStatusService outboxStatusService;
     private final ObjectMapper objectMapper;
 
-    public OutboxPublishStatusConsumer(
-        OutboxStatusService outboxStatusService,
-        ObjectMapper objectMapper
-    ) {
-        this.outboxStatusService = outboxStatusService;
-        this.objectMapper = objectMapper;
-    }
-
     @KafkaListener(
         topics = {
-            "${order.outbox.topic:delivery.delivery.outbox}",
+            "${order.outbox.topic:delivery.delivery_order.outbox}",
             "${order.outbox.smt-topic:outbox.event.ORDER}"
         },
         groupId = "${order.outbox.publisher-consumer-group:order-outbox-status}"

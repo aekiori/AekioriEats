@@ -15,6 +15,15 @@
 - Outbox 상태 전환 처리
 - 실패 Outbox 재처리 내부 API
 
+## 인가 정책 (P0)
+- 인증 주체는 Gateway 주입 헤더(`X-User-Id`, `X-User-Role`) 기준으로만 판단한다.
+- `POST /api/v1/orders`: body `userId`와 인증 주체가 같아야 한다. (`ADMIN`은 예외)
+- `GET /api/v1/orders?userId=...`: 조회 대상 `userId`와 인증 주체가 같아야 한다. (`ADMIN`은 예외)
+- `GET /api/v1/orders/{orderId}`: 주문 소유자만 조회 가능하다. (`ADMIN`은 예외)
+- `PATCH /api/v1/orders/{orderId}/status`: 주문 소유자만 상태 변경 가능하다. (`ADMIN`은 예외)
+- 소유권 위반은 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
+- 인증 주체 헤더 누락/비정상은 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
+
 ## 핵심 흐름
 
 ```mermaid
@@ -122,17 +131,18 @@ Outbox 상태:
 루트에서 전체 스택 실행:
 
 ```cmd
-docker compose up -d --build
+docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml up -d --build
+docker compose --env-file docker/app/.env.app -f docker/app/compose.app.yml up -d --build
 ```
 
 Debezium connector 등록:
 
 ```cmd
-curl -X POST -H "Content-Type: application/json" --data-binary @infra\debezium\order-outbox-connector-smt.json http://localhost:8083/connectors
+curl -X POST -H "Content-Type: application/json" --data-binary @Order\infra\debezium\order-outbox-connector-smt.json http://localhost:8083/connectors
 ```
 
 ## 테스트
 
 ```cmd
-.\gradlew.bat :Order:test
+.\gradlew.bat test
 ```

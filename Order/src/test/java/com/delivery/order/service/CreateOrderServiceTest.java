@@ -6,6 +6,7 @@ import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
 import com.delivery.order.service.order.CreateOrderService;
+import com.delivery.order.service.order.OrderAuthorizationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +32,10 @@ class CreateOrderServiceTest {
     private OrderItemRepository orderItemRepository;
 
     @Mock
-    private OrderOutboxService orderOutboxService;
+    private OrderIdempotencyCacheService orderIdempotencyCacheService;
 
     @Mock
-    private OrderIdempotencyCacheService orderIdempotencyCacheService;
+    private OrderAuthorizationService orderAuthorizationService;
 
     private CreateOrderService createOrderService;
 
@@ -43,8 +44,8 @@ class CreateOrderServiceTest {
         createOrderService = new CreateOrderService(
             orderRepository,
             orderItemRepository,
-            orderOutboxService,
             orderIdempotencyCacheService,
+            orderAuthorizationService,
             new ObjectMapper()
         );
     }
@@ -68,7 +69,7 @@ class CreateOrderServiceTest {
             })
             .hasMessageContaining("idempotencyKey");
 
-        verifyNoInteractions(orderItemRepository, orderOutboxService);
+        verifyNoInteractions(orderItemRepository);
     }
 
     @Test
@@ -89,7 +90,7 @@ class CreateOrderServiceTest {
                 assertThat(apiException.getStatus()).isEqualTo(HttpStatus.CONFLICT);
             });
 
-        verifyNoInteractions(orderItemRepository, orderOutboxService);
+        verifyNoInteractions(orderItemRepository);
     }
 
     private String invokeHash(CreateOrderDto request) {

@@ -1,0 +1,77 @@
+name: aekiorieats
+
+x-app-defaults: &app-defaults
+    restart: unless-stopped
+
+x-app-db-kafka-env: &app-db-kafka-env
+    SPRING_DATASOURCE_USERNAME: ${APP_DB_USERNAME}
+    SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD}
+    SPRING_KAFKA_BOOTSTRAP_SERVERS: ${APP_KAFKA_BOOTSTRAP_SERVERS}
+
+services:
+    ##################################################################################
+    auth-service:
+        <<: *app-defaults
+        build:
+            context: ../../Auth
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: auth-service
+        ports:
+            - "${AUTH_SERVER_PORT}:${AUTH_SERVER_PORT}"
+        environment:
+            <<: *app-db-kafka-env
+            SERVER_PORT: ${AUTH_SERVER_PORT}
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${AUTH_DB_NAME}
+            AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+    ##################################################################################
+    user-service:
+        <<: *app-defaults
+        build:
+            context: ../../User
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: user-service
+        ports:
+            - "${USER_SERVER_PORT}:${USER_SERVER_PORT}"
+        environment:
+            <<: *app-db-kafka-env
+            SERVER_PORT: ${USER_SERVER_PORT}
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${USER_DB_NAME}
+    ##################################################################################
+    order-service:
+        <<: *app-defaults
+        build:
+            context: ../../Order
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: order-service
+        ports:
+            - "${ORDER_SERVER_PORT}:${ORDER_SERVER_PORT}"
+        environment:
+            <<: *app-db-kafka-env
+            SERVER_PORT: ${ORDER_SERVER_PORT}
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${ORDER_DB_NAME}
+            SPRING_DATA_REDIS_HOST: ${APP_REDIS_HOST}
+            SPRING_DATA_REDIS_PORT: ${APP_REDIS_PORT}
+            ORDER_INTERNAL_API_KEY: ${ORDER_INTERNAL_API_KEY}
+    ##################################################################################
+    gateway-service:
+        <<: *app-defaults
+        build:
+            context: ../../Gateway
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: gateway-service
+        ports:
+            - "${GATEWAY_SERVER_PORT}:${GATEWAY_SERVER_PORT}"
+        depends_on:
+            auth-service:
+                condition: service_started
+            user-service:
+                condition: service_started
+            order-service:
+                condition: service_started
+        environment:
+            SERVER_PORT: ${GATEWAY_SERVER_PORT}
+            AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+            GATEWAY_AUTH_SERVICE_URI: ${GATEWAY_AUTH_SERVICE_URI}
+            GATEWAY_USER_SERVICE_URI: ${GATEWAY_USER_SERVICE_URI}
+            GATEWAY_ORDER_SERVICE_URI: ${GATEWAY_ORDER_SERVICE_URI}
+    ##################################################################################

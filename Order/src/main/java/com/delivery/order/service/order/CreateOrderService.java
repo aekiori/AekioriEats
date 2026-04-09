@@ -34,6 +34,7 @@ public class CreateOrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderIdempotencyCacheService orderIdempotencyCacheService;
+    private final OrderAuthorizationService orderAuthorizationService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -56,6 +57,18 @@ public class CreateOrderService {
             orderIdempotencyCacheService.release(idempotencyKey);
             throw exception;
         }
+    }
+
+    @Transactional
+    public CreateOrderResultDto createOrder(
+        CreateOrderDto request,
+        String idempotencyKeyHeader,
+        long authenticatedUserId,
+        String authenticatedUserRole
+    ) {
+        orderAuthorizationService.requireSelfOrAdmin(authenticatedUserId, request.userId(), authenticatedUserRole);
+
+        return createOrder(request, idempotencyKeyHeader);
     }
 
     private CreateOrderResultDto resolveIdempotentResult(String idempotencyKey, String requestHash) {

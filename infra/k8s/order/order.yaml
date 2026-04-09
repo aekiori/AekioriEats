@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aekiori
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-config
+  namespace: aekiori
+data:
+  SPRING_DATASOURCE_URL: "jdbc:mysql://host.docker.internal:3306/delivery_order"
+  SPRING_DATASOURCE_USERNAME: "root"
+  SPRING_DATA_REDIS_HOST: "host.docker.internal"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "host.docker.internal:19092"
+  ORDER_OUTBOX_TOPIC: "delivery.delivery_order.outbox"
+  ORDER_OUTBOX_SMT_TOPIC: "outbox.event.ORDER"
+  ORDER_OUTBOX_PUBLISHER_CONSUMER_GROUP: "order-outbox-status"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: order-secret
+  namespace: aekiori
+type: Opaque
+stringData:
+  SPRING_DATASOURCE_PASSWORD: "root"
+  ORDER_INTERNAL_API_KEY: "order-internal-dev-key"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: aekiori
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: aekiori/order:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: order-config
+            - secretRef:
+                name: order-secret
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: aekiori
+spec:
+  selector:
+    app: order-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

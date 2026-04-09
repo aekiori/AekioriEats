@@ -1,0 +1,19 @@
+apiVersion: 1
+
+providers:
+  - name: Aekiori
+    # Grafana 조직 ID (기본 org)
+    orgId: 1
+    # Grafana UI에서 보일 폴더 이름
+    folder: Aekiori
+    # 파일 기반 프로비저닝
+    type: file
+    # 파일이 삭제되면 Grafana 대시보드도 동기화 삭제
+    disableDeletion: false
+    # 파일 변경 감지 주기(초)
+    updateIntervalSeconds: 10
+    # UI에서 대시보드 수정 허용
+    allowUiUpdates: true
+    options:
+      # 컨테이너 내부 대시보드 JSON 경로
+      path: /var/lib/grafana/dashboards

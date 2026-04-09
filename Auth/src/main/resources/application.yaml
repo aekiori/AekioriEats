@@ -44,3 +44,32 @@ auth:
         expected-insertions: ${AUTH_BLOOM_EXPECTED_INSERTIONS:5000000}
         fpp: ${AUTH_BLOOM_FPP:0.01}
         warmup-batch-size: ${AUTH_BLOOM_WARMUP_BATCH_SIZE:10000}
+    rate-limit:
+        enabled: ${AUTH_RATE_LIMIT_ENABLED:true}
+        cleanup-threshold: ${AUTH_RATE_LIMIT_CLEANUP_THRESHOLD:100000}
+        signup:
+            ip:
+                request-limit: ${AUTH_RATE_LIMIT_SIGNUP_IP_REQUEST_LIMIT:20}
+                rate-limit-period-seconds: ${AUTH_RATE_LIMIT_SIGNUP_IP_RATE_LIMIT_PERIOD_SECONDS:60}
+            account:
+                request-limit: ${AUTH_RATE_LIMIT_SIGNUP_ACCOUNT_REQUEST_LIMIT:5}
+                rate-limit-period-seconds: ${AUTH_RATE_LIMIT_SIGNUP_ACCOUNT_RATE_LIMIT_PERIOD_SECONDS:300}
+        login:
+            ip:
+                request-limit: ${AUTH_RATE_LIMIT_LOGIN_IP_REQUEST_LIMIT:60}
+                rate-limit-period-seconds: ${AUTH_RATE_LIMIT_LOGIN_IP_RATE_LIMIT_PERIOD_SECONDS:60}
+            account:
+                request-limit: ${AUTH_RATE_LIMIT_LOGIN_ACCOUNT_REQUEST_LIMIT:10}
+                rate-limit-period-seconds: ${AUTH_RATE_LIMIT_LOGIN_ACCOUNT_RATE_LIMIT_PERIOD_SECONDS:300}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus
+    metrics:
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+        tags:
+            application: ${spring.application.name}

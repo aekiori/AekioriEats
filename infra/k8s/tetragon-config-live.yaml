@@ -1,0 +1,24 @@
+﻿apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+    name: "aekiori-all-in-one-monitor"
+spec:
+    kprobes:
+        - call: "tcp_v4_connect"
+          syscall: false
+          args:
+              - index: 0
+                type: "sock"
+        - call: "sys_write"
+          syscall: true
+          args:
+              - index: 0
+                type: "int" # FD
+              - index: 1
+                type: "char_buf" # 데이터 내용
+                sizeArgIndex: 2
+        - call: "sys_setresuid"
+          syscall: true
+          args:
+              - index: 0
+                type: "uint32"

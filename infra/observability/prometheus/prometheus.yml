@@ -1,0 +1,44 @@
+# scrape_interval:
+# Prometheus가 각 target에서 메트릭을 가져오는 주기.
+# 값이 짧을수록 그래프가 더 빠르게 반응하지만, 수집 부하는 증가한다.
+global:
+  # 기본 수집 주기 (현재 15초)
+  scrape_interval: 15s
+  # 룰/알람 평가 주기 (알람 룰 안 쓰면 scrape_interval과 같게 둬도 무방)
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus 자기 자신 상태 수집
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  # Gateway 애플리케이션 메트릭
+  - job_name: gateway
+    # Spring Actuator Prometheus 엔드포인트
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8088
+
+  # Auth 애플리케이션 메트릭
+  - job_name: auth
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8084
+
+  # User 애플리케이션 메트릭
+  - job_name: user
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8082
+
+  # Order 애플리케이션 메트릭
+  - job_name: order
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8081

@@ -34,7 +34,7 @@ class OutboxPublishStatusConsumerTest {
         when(outboxStatusService.markPublishedIfInit("event-001")).thenReturn(true);
 
         ConsumerRecord<String, String> record = new ConsumerRecord<>(
-            "delivery.delivery.outbox",
+            "delivery.delivery_order.outbox",
             0,
             0L,
             null,
@@ -100,7 +100,7 @@ class OutboxPublishStatusConsumerTest {
     @Test
     void Debezium_PUBLISHED_이벤트를_받으면_추가_전환을_시도하지_않는다() {
         ConsumerRecord<String, String> record = new ConsumerRecord<>(
-            "delivery.delivery.outbox",
+            "delivery.delivery_order.outbox",
             0,
             0L,
             null,

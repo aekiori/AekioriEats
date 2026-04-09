@@ -56,7 +56,7 @@ class OutboxAdminServiceTest {
     void FAILED_Outbox는_수동_재처리_발행할_수_있다() {
         Outbox outbox = new Outbox(
             "event-001",
-            "ORDER",
+            Outbox.AggregateType.ORDER,
             10L,
             "OrderCreated",
             "{\"eventId\":\"event-001\"}",
@@ -81,7 +81,7 @@ class OutboxAdminServiceTest {
     void FAILED가_아닌_Outbox는_수동_재처리할_수_없다() {
         Outbox outbox = new Outbox(
             "event-002",
-            "ORDER",
+            Outbox.AggregateType.ORDER,
             11L,
             "OrderCreated",
             "{\"eventId\":\"event-002\"}",

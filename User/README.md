@@ -1,33 +1,21 @@
 # User 서비스
-사용자 생명주기와 상태를 관리하는 도메인 서비스다.
+사용자 프로필/상태를 관리하는 도메인 서비스다.
 
 ## 주요 기능
-- 회원가입 (`이메일 + 비밀번호`)
-- 이메일 중복 확인
-- 회원 정보 조회
-- 회원 상태 변경 (`ACTIVE`, `LOCKED`, `DEACTIVATED`)
+- 사용자 조회
+- 사용자 상태 변경 (`ACTIVE`, `LOCKED`, `DEACTIVATED`)
+- `AuthUserCreated` 이벤트 소비 후 로컬 `users` projection 생성
+- 중복 이벤트 소비 차단(dedup)
 
 ## API
 
-### 1) 이메일 중복 확인
-`GET /api/v1/users/email/exists?email={email}`
-
-응답 예시:
-```json
-{
-  "email": "hello@example.com",
-  "exists": true
-}
-```
-
-### 2) 회원가입
+### 1) 사용자 생성 (주로 내부/운영 용도)
 `POST /api/v1/users`
 
 요청 예시:
 ```json
 {
-  "email": "hello@example.com",
-  "password": "password1234"
+  "email": "hello@example.com"
 }
 ```
 
@@ -41,10 +29,10 @@
 }
 ```
 
-### 3) 회원 조회
+### 2) 사용자 조회
 `GET /api/v1/users/{userId}`
 
-### 4) 회원 상태 변경
+### 3) 사용자 상태 변경
 `PATCH /api/v1/users/{userId}/status`
 
 요청 예시:
@@ -54,51 +42,41 @@
 }
 ```
 
-## Bloom Filter
-이메일 중복 확인 API에서 DB 부하를 줄이기 위한 학습용 PoC다.
+## 인가 정책 (P0)
+- 인증 주체는 Gateway 주입 헤더(`X-User-Id`, `X-User-Role`) 기준으로만 판단한다.
+- `GET /api/v1/users/{userId}`: 본인만 조회 가능. (`ADMIN` 예외)
+- `PATCH /api/v1/users/{userId}/status`: 본인만 변경 가능. (`ADMIN` 예외)
+- 소유권 위반은 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
+- 인증 주체 헤더 누락/비정상은 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
 
-- 위치: `UserEmailBloomFilter`
-- 전략:
-  - `mightContain=false`면 DB 조회 없이 `exists=false` 바로 반환
-  - `mightContain=true`면 DB `existsByEmail`로 최종 확인
-  - 회원가입 성공 시 Bloom Filter에 이메일 추가
-  - 최종 정합성은 DB `UNIQUE(email)` 제약으로 보장
+## Auth 이벤트 소비 정책 (2026-04)
+- `User`는 `Auth`가 발행한 `AuthUserCreated`를 소비한다.
+- 생성 이벤트는 **INSERT only + idempotent** 원칙으로 처리한다.
+- 기존 `users` 데이터 overwrite는 금지한다.
 
-### 워밍업 동작
-- 앱 시작 후 `ApplicationReadyEvent`에서 비동기 워밍업 수행
-- 워밍업 완료 전에는 자동으로 DB 조회 fallback
-- 워밍업 실패해도 서비스는 정상 기동되고 DB fallback으로 동작
-- 워밍업 실패 시 재시도는 넣지 않음
-  - 블룸 필터는 “있으면 좋고 없으면 그만”인 **아님말고** 식 성능 최적화 계층이다
-  - 실패해도 정합성/기능에는 영향 없고, 그냥 DB 조회 경로로 동작한다
-  - 재시도 로직까지 넣으면 오히려 오버엔지니어링인 것 같아서 현재는 제외했다
+### Dedup 전략
+- `processed_events(event_id PK)` 테이블로 이벤트 중복 소비를 차단한다.
+- 같은 `eventId`가 다시 오면 projection 반영 없이 skip 한다.
+- dedup insert와 user insert는 같은 트랜잭션에서 처리한다.
 
-### 설정값 (`application.yaml`)
-```yaml
-user:
-  bloom:
-    enabled: true
-    expected-insertions: 5000000
-    fpp: 0.01
-    warmup-batch-size: 10000
+### Projection SQL 원칙
+```sql
+INSERT INTO users (...)
+VALUES (...)
+ON DUPLICATE KEY UPDATE id = id; -- no-op
 ```
-
-### 주의사항
-- Bloom Filter는 삭제를 지원하지 않아서 탈퇴/삭제된 이메일이 필터에 남을 수 있다
-- 이 경우 false positive로 DB 확인 경로를 타고, 정합성에는 영향 없다
-
-## 운영 메모
-- 블룸 필터는 최적화 계층이고 정답 소스는 DB다
-- 고QPS 환경 아니면 과한 튜닝보다 DB 인덱스/쿼리 플랜 유지가 우선이다
-- `expected-insertions`, `fpp`는 트래픽/회원 수 늘면 주기적으로 다시 맞춰야함
 
 ## 데이터베이스
 - 기본 스키마: `delivery_user`
-- 테이블: `users`
-- Flyway 마이그레이션: `User/src/main/resources/db/migration/V1__init_user_schema.sql`
+- 테이블: `users`, `processed_events`
+- Flyway 마이그레이션: `User/src/main/resources/db/migration`
 - Flyway 히스토리 테이블: `flyway_schema_history_user`
 
 ## 테스트 실행
 ```cmd
-.\gradlew.bat :User:test
+.\gradlew.bat test
 ```
+
+## 참고
+- Bloom Filter 이메일 중복 최적화는 현재 `Auth` 도메인에 있다.
+- 로그인 식별자 정책(이메일/ID)은 `Auth` 도메인 문서를 기준으로 본다.

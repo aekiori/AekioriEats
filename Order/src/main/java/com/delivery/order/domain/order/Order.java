@@ -3,7 +3,17 @@ package com.delivery.order.domain.order;
 import com.delivery.order.domain.order.event.OrderCreatedOutboxEvent;
 import com.delivery.order.domain.order.event.OrderStatusChangedOutboxEvent;
 import com.delivery.order.domain.order.exception.InvalidOrderStatusTransitionException;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,9 +21,13 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Entity
@@ -32,6 +46,8 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Order extends AbstractAggregateRoot<Order> {
     public enum Status {PENDING, PAID, FAILED, CANCELLED}
+
+    private static final Map<Status, Set<Status>> ALLOWED_STATUS_TRANSITIONS = createAllowedStatusTransitions();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -109,21 +125,20 @@ public class Order extends AbstractAggregateRoot<Order> {
     }
 
     private void validateStatusTransition(Status targetStatus) {
-        /*
-            this.status => targetStatus 로의 변경 규칙
-            PENDING -> PAID, FAILED, CANCELLED 만 허용
-            PAID -> CANCELLED 만 허용
-            FAILED, CANCELLED 에서는 상태 변경 불가
-         */
-        boolean validTransition =
-            (this.status == Status.PENDING && (
-                targetStatus == Status.PAID ||
-                    targetStatus == Status.FAILED ||
-                    targetStatus == Status.CANCELLED
-            )) || (this.status == Status.PAID && targetStatus == Status.CANCELLED);
+        Set<Status> allowedTargets = ALLOWED_STATUS_TRANSITIONS.getOrDefault(this.status, Collections.emptySet());
 
-        if (!validTransition) {
+        if (!allowedTargets.contains(targetStatus)) {
             throw new InvalidOrderStatusTransitionException(this.status, targetStatus);
         }
+    }
+
+    private static Map<Status, Set<Status>> createAllowedStatusTransitions() {
+        Map<Status, Set<Status>> transitions = new EnumMap<>(Status.class);
+        transitions.put(Status.PENDING, EnumSet.of(Status.PAID, Status.FAILED, Status.CANCELLED));
+        transitions.put(Status.PAID, EnumSet.of(Status.CANCELLED));
+        transitions.put(Status.FAILED, EnumSet.noneOf(Status.class));
+        transitions.put(Status.CANCELLED, EnumSet.noneOf(Status.class));
+
+        return Collections.unmodifiableMap(transitions);
     }
 }

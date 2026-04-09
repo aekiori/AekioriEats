@@ -1,9 +1,12 @@
+server:
+    port: ${SERVER_PORT:8081}
+
 spring:
     application:
         name: Order
 
     datasource:
-        url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/delivery}
+        url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/delivery_order}
         username: ${SPRING_DATASOURCE_USERNAME:root}
         password: ${SPRING_DATASOURCE_PASSWORD:root}
         driver-class-name: com.mysql.cj.jdbc.Driver
@@ -43,8 +46,20 @@ order:
         result-ttl-seconds: ${ORDER_IDEMPOTENCY_RESULT_TTL_SECONDS:600}
 
     outbox:
-        topic: ${ORDER_OUTBOX_TOPIC:delivery.delivery.outbox}
+        topic: ${ORDER_OUTBOX_TOPIC:delivery.delivery_order.outbox}
         smt-topic: ${ORDER_OUTBOX_SMT_TOPIC:outbox.event.ORDER}
         publisher-consumer-group: ${ORDER_OUTBOX_PUBLISHER_CONSUMER_GROUP:order-outbox-status}
     internal:
         api-key: ${ORDER_INTERNAL_API_KEY:order-internal-dev-key}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus
+    metrics:
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+        tags:
+            application: ${spring.application.name}

@@ -32,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 class AuthServiceIntegrationTest {
+    private static final String TEST_IP = "127.0.0.1";
+
     @Autowired
     private AuthService authService;
 
@@ -71,7 +73,8 @@ class AuthServiceIntegrationTest {
     @Test
     void signup_creates_auth_user_and_user_created_outbox() throws Exception {
         AuthTokenResponseDto tokenResponse = authService.signup(
-            new SignupRequestDto("new-user@example.com", "password1234")
+            new SignupRequestDto("new-user@example.com", "password1234"),
+            TEST_IP
         );
 
         assertThat(tokenResponse.accessToken()).isNotBlank();
@@ -142,9 +145,9 @@ class AuthServiceIntegrationTest {
 
     @Test
     void signup_fails_when_email_is_duplicated() {
-        authService.signup(new SignupRequestDto("dup-user@example.com", "password1234"));
+        authService.signup(new SignupRequestDto("dup-user@example.com", "password1234"), TEST_IP);
 
-        assertThatThrownBy(() -> authService.signup(new SignupRequestDto("dup-user@example.com", "password1234")))
+        assertThatThrownBy(() -> authService.signup(new SignupRequestDto("dup-user@example.com", "password1234"), TEST_IP))
             .isInstanceOf(ApiException.class)
             .hasMessageContaining("Email is already registered.");
 
@@ -175,7 +178,8 @@ class AuthServiceIntegrationTest {
     @Test
     void login_issues_access_and_refresh_tokens() {
         AuthTokenResponseDto tokenResponse = authService.login(
-            new LoginRequestDto("auth-user@example.com", "password1234")
+            new LoginRequestDto("auth-user@example.com", "password1234"),
+            TEST_IP
         );
 
         assertThat(tokenResponse.accessToken()).isNotBlank();
@@ -200,14 +204,14 @@ class AuthServiceIntegrationTest {
 
     @Test
     void login_fails_when_password_is_invalid() {
-        assertThatThrownBy(() -> authService.login(new LoginRequestDto("auth-user@example.com", "wrong-password")))
+        assertThatThrownBy(() -> authService.login(new LoginRequestDto("auth-user@example.com", "wrong-password"), TEST_IP))
             .isInstanceOf(ApiException.class)
             .hasMessageContaining("Email or password is invalid.");
     }
 
     @Test
     void refresh_rotates_refresh_token() {
-        AuthTokenResponseDto first = authService.login(new LoginRequestDto("auth-user@example.com", "password1234"));
+        AuthTokenResponseDto first = authService.login(new LoginRequestDto("auth-user@example.com", "password1234"), TEST_IP);
 
         AuthTokenResponseDto second = authService.refresh(new RefreshTokenRequestDto(first.refreshToken()));
 
@@ -222,8 +226,24 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
+    void refresh_reuse_detection_revokes_all_active_tokens() {
+        AuthTokenResponseDto first = authService.login(new LoginRequestDto("auth-user@example.com", "password1234"), TEST_IP);
+        AuthTokenResponseDto second = authService.refresh(new RefreshTokenRequestDto(first.refreshToken()));
+
+        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequestDto(first.refreshToken())))
+            .isInstanceOf(ApiException.class)
+            .satisfies(error -> {
+                ApiException exception = (ApiException) error;
+                assertThat(exception.getCode()).isEqualTo("AUTH_REFRESH_TOKEN_REUSE_DETECTED");
+                assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
+            });
+
+        assertThat(refreshTokenRepository.findByTokenAndRevokedFalse(second.refreshToken())).isEmpty();
+    }
+
+    @Test
     void logout_revokes_refresh_token() {
-        AuthTokenResponseDto first = authService.login(new LoginRequestDto("auth-user@example.com", "password1234"));
+        AuthTokenResponseDto first = authService.login(new LoginRequestDto("auth-user@example.com", "password1234"), TEST_IP);
         authService.logout(new LogoutRequestDto(first.refreshToken()));
 
         assertThat(refreshTokenRepository.findByTokenAndRevokedFalse(first.refreshToken())).isEmpty();

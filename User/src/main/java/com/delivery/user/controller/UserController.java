@@ -4,6 +4,7 @@ import com.delivery.user.dto.request.CreateUserDto;
 import com.delivery.user.dto.request.UpdateUserStatusDto;
 import com.delivery.user.dto.response.CreateUserResultDto;
 import com.delivery.user.dto.response.UserDetailResultDto;
+import com.delivery.user.service.user.UserAuthorizationService;
 import com.delivery.user.service.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
 public class UserController {
+    private final UserAuthorizationService userAuthorizationService;
     private final UserService userService;
 
     @PostMapping
@@ -31,15 +34,27 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDetailResultDto> getUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUser(userId));
+    public ResponseEntity<UserDetailResultDto> getUser(
+        @PathVariable Long userId,
+        @RequestHeader(value = "X-User-Id", required = false)
+        String authenticatedUserIdHeader,
+        @RequestHeader(value = "X-User-Role", required = false)
+        String authenticatedUserRole
+    ) {
+        long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        return ResponseEntity.ok(userService.getUser(userId, authenticatedUserId, authenticatedUserRole));
     }
 
     @PatchMapping("/{userId}/status")
     public ResponseEntity<UserDetailResultDto> updateUserStatus(
         @PathVariable Long userId,
-        @Valid @RequestBody UpdateUserStatusDto request
+        @Valid @RequestBody UpdateUserStatusDto request,
+        @RequestHeader(value = "X-User-Id", required = false)
+        String authenticatedUserIdHeader,
+        @RequestHeader(value = "X-User-Role", required = false)
+        String authenticatedUserRole
     ) {
-        return ResponseEntity.ok(userService.updateUserStatus(userId, request));
+        long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        return ResponseEntity.ok(userService.updateUserStatus(userId, request, authenticatedUserId, authenticatedUserRole));
     }
 }

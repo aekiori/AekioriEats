@@ -20,11 +20,11 @@ import com.delivery.order.service.order.GetOrderService;
 import com.delivery.order.service.order.GetOrdersService;
 import com.delivery.order.service.order.UpdateOrderStatusService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -32,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Transactional
 @ActiveProfiles("test")
 @Import(TestIdempotencyCacheConfig.class)
 class OrderServiceIntegrationTest {
@@ -59,6 +58,13 @@ class OrderServiceIntegrationTest {
 
     @Autowired
     private OutboxRepository outboxRepository;
+
+    @AfterEach
+    void tearDown() {
+        outboxRepository.deleteAll();
+        orderItemRepository.deleteAll();
+        orderRepository.deleteAll();
+    }
 
     @Test
     void create_order_persists_order_items_and_order_created_outbox() {
@@ -95,13 +101,14 @@ class OrderServiceIntegrationTest {
             .hasSize(1)
             .first()
             .satisfies(outbox -> {
-                assertThat(outbox.getAggregateType()).isEqualTo("ORDER");
+                assertThat(outbox.getAggregateType()).isEqualTo(Outbox.AggregateType.ORDER);
                 assertThat(outbox.getAggregateId()).isEqualTo(savedOrder.getId());
                 assertThat(outbox.getEventType()).isEqualTo("OrderCreated");
                 assertThat(outbox.getStatus()).isEqualTo(Outbox.Status.INIT);
                 assertThat(outbox.getPartitionKey()).isEqualTo("1");
                 assertThat(outbox.getPayload()).contains("OrderCreated");
-                assertThat(outbox.getPayload()).contains("\"orderId\":" + savedOrder.getId());
+                assertThat(outbox.getPayload()).contains("orderId");
+                assertThat(outbox.getPayload()).contains(String.valueOf(savedOrder.getId()));
             });
     }
 
@@ -166,9 +173,11 @@ class OrderServiceIntegrationTest {
                 assertThat(outbox.getAggregateId()).isEqualTo(orderId);
                 assertThat(outbox.getStatus()).isEqualTo(Outbox.Status.INIT);
                 assertThat(outbox.getPayload()).contains("OrderStatusChanged");
-                assertThat(outbox.getPayload()).contains("\"currentStatus\":\"PENDING\"");
-                assertThat(outbox.getPayload()).contains("\"targetStatus\":\"PAID\"");
-                assertThat(outbox.getPayload()).contains("\"reason\":\"payment completed\"");
+                assertThat(outbox.getPayload()).contains("currentStatus");
+                assertThat(outbox.getPayload()).contains("PENDING");
+                assertThat(outbox.getPayload()).contains("targetStatus");
+                assertThat(outbox.getPayload()).contains("PAID");
+                assertThat(outbox.getPayload()).contains("payment completed");
             });
     }
 

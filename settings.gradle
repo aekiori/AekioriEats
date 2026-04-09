@@ -1,6 +1,0 @@
-rootProject.name = 'SeokjunEats'
-
-include 'Order'
-include 'User'
-include 'Auth'
-include 'Gateway'

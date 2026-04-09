@@ -19,6 +19,7 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final UserAuthorizationService userAuthorizationService;
 
     @Transactional
     public CreateUserResultDto createUser(CreateUserDto request) {
@@ -43,12 +44,29 @@ public class UserService {
         return UserDetailResultDto.from(findUser(userId));
     }
 
+    @Transactional(readOnly = true)
+    public UserDetailResultDto getUser(Long userId, long authenticatedUserId, String authenticatedUserRole) {
+        userAuthorizationService.requireSelfOrAdmin(authenticatedUserId, userId, authenticatedUserRole);
+        return getUser(userId);
+    }
+
     @Transactional
     public UserDetailResultDto updateUserStatus(Long userId, UpdateUserStatusDto request) {
         User user = findUser(userId);
         user.updateStatus(request.status());
 
         return UserDetailResultDto.from(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserDetailResultDto updateUserStatus(
+        Long userId,
+        UpdateUserStatusDto request,
+        long authenticatedUserId,
+        String authenticatedUserRole
+    ) {
+        userAuthorizationService.requireSelfOrAdmin(authenticatedUserId, userId, authenticatedUserRole);
+        return updateUserStatus(userId, request);
     }
 
     private User findUser(Long userId) {

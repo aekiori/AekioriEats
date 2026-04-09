@@ -6,7 +6,9 @@
 - 로그인 (`이메일 + 비밀번호`)
 - 액세스 토큰 발급 (JWT)
 - 리프레시 토큰 발급/로테이션
+- 리프레시 토큰 재사용 탐지 (reuse detection)
 - 로그아웃 (리프레시 토큰 폐기)
+- 로그인/회원가입 Rate Limit (IP + 계정)
 
 ## API
 
@@ -55,6 +57,16 @@
 - 액세스 토큰: JWT (`auth.jwt.access-token-expiration-seconds`)
 - 리프레시 토큰: DB 저장 (`auth_refresh_tokens` 테이블)
 - 리프레시 로테이션: 재발급 시 기존 리프레시 토큰 폐기
+- 재사용 탐지: 이미 폐기된 리프레시 토큰 재사용 시 `AUTH_REFRESH_TOKEN_REUSE_DETECTED` 반환 + 해당 사용자 활성 리프레시 토큰 전부 폐기
+
+## Rate Limit 정책
+- 로그인/회원가입 모두 `IP`와 `account(email)` 버킷을 동시에 검사한다.
+- 제한 초과 시 `429 TOO_MANY_REQUESTS`, `AUTH_RATE_LIMITED`를 반환한다.
+- 설정 키:
+  - `auth.rate-limit.signup.ip.*`
+  - `auth.rate-limit.signup.account.*`
+  - `auth.rate-limit.login.ip.*`
+  - `auth.rate-limit.login.account.*`
 ## 로그인 시 User 정보 연동 전략
 
 | 방식 | 설명 | 적합한 상황 | 추천도           |
@@ -78,7 +90,7 @@
 
 ## 테스트 실행
 ```cmd
-.\gradlew.bat :Auth:test
+.\gradlew.bat test
 ```
 
 ## Auth ↔ User 이벤트 설계 (2026-04)

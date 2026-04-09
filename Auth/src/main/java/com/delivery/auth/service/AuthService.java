@@ -31,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthEmailBloomFilter authEmailBloomFilter;
+    private final AuthRateLimitService authRateLimitService;
 
     @Value("${auth.jwt.refresh-token-expiration-seconds:1209600}")
     private long refreshTokenExpirationSeconds;
@@ -49,8 +50,9 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthTokenResponseDto signup(SignupRequestDto request) {
+    public AuthTokenResponseDto signup(SignupRequestDto request, String clientIp) {
         String normalizedEmail = normalizeEmail(request.email());
+        authRateLimitService.validateSignup(normalizedEmail, clientIp);
 
         if (authEmailBloomFilter.shouldCheckDb(normalizedEmail) && authUserRepository.existsByEmail(normalizedEmail)) {
             throw new ApiException(
@@ -81,8 +83,9 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthTokenResponseDto login(LoginRequestDto request) {
+    public AuthTokenResponseDto login(LoginRequestDto request, String clientIp) {
         String normalizedEmail = normalizeEmail(request.email());
+        authRateLimitService.validateLogin(normalizedEmail, clientIp);
 
         AuthUser authUser = authUserRepository.findByEmail(normalizedEmail)
             .orElseThrow(() -> new ApiException(
@@ -107,17 +110,27 @@ public class AuthService {
             );
         }
 
+        authRateLimitService.clearLoginAccountLimit(normalizedEmail);
         return issueTokens(authUser);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public AuthTokenResponseDto refresh(RefreshTokenRequestDto request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenAndRevokedFalse(request.refreshToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
             .orElseThrow(() -> new ApiException(
                 "AUTH_INVALID_REFRESH_TOKEN",
                 "Refresh token is invalid.",
                 HttpStatus.UNAUTHORIZED
             ));
+
+        if (Boolean.TRUE.equals(refreshToken.getRevoked())) {
+            revokeActiveRefreshTokens(refreshToken.getUserId());
+            throw new ApiException(
+                "AUTH_REFRESH_TOKEN_REUSE_DETECTED",
+                "Refresh token reuse detected. Please login again.",
+                HttpStatus.UNAUTHORIZED
+            );
+        }
 
         if (refreshToken.isExpired(LocalDateTime.now())) {
             refreshToken.revoke();
@@ -166,5 +179,10 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void revokeActiveRefreshTokens(Long userId) {
+        refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId)
+            .forEach(RefreshToken::revoke);
     }
 }

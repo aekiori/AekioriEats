@@ -36,8 +36,8 @@ flowchart LR
 
 관련 파일:
 
-- [docker-compose.yml](/C:/Users/wildphs/Desktop/SeokjunEats/docker-compose.yml)
-- [order-outbox-connector-smt.json](/C:/Users/wildphs/Desktop/SeokjunEats/infra/debezium/order-outbox-connector-smt.json)
+- [docker/infra/compose.infra.yml](../docker/infra/compose.infra.yml)
+- [order-outbox-connector-smt.json](/C:/Users/wildphs/Desktop/AekioriEats/Order/infra/debezium/order-outbox-connector-smt.json)
 
 ## 4. 토픽
 
@@ -137,7 +137,7 @@ SMT를 적용하면 Outbox Event Router가 토픽과 메시지를 더 단순하�
 
 파일:
 
-- [order-outbox-connector-smt.json](/C:/Users/wildphs/Desktop/SeokjunEats/infra/debezium/order-outbox-connector-smt.json)
+- [order-outbox-connector-smt.json](/C:/Users/wildphs/Desktop/AekioriEats/Order/infra/debezium/order-outbox-connector-smt.json)
 
 핵심 설정:
 
@@ -179,7 +179,7 @@ curl -X DELETE http://localhost:8083/connectors/order-outbox-connector
 ### 11.2 SMT 모드 등록
 
 ```cmd
-curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" --data-binary "@infra\\debezium\\order-outbox-connector-smt.json"
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" --data-binary "@Order\\infra\\debezium\\order-outbox-connector-smt.json"
 ```
 
 ## 12. 장애 확인 순서
@@ -210,10 +210,10 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 
 확인 순서:
 
-1. `docker compose logs connect --tail=200`
+1. `docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml logs connect --tail=200`
 2. `curl http://localhost:8083/connectors/order-outbox-connector/status`
 3.
-`docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:29092 --describe --group order-outbox-status`
+`docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml exec kafka kafka-consumer-groups --bootstrap-server kafka:29092 --describe --group order-outbox-status`
 4. 토픽 offset 확인
 
 ## 13. 운영 명령 모음
@@ -221,17 +221,17 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 ### 13.1 Kafka
 
 ```cmd
-docker compose exec kafka kafka-topics --bootstrap-server kafka:29092 --list
+docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml exec kafka kafka-topics --bootstrap-server kafka:29092 --list
 ```
 
 ```cmd
-docker compose exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic outbox.event.ORDER --timeout-ms 5000 --max-messages 5
+docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic outbox.event.ORDER --timeout-ms 5000 --max-messages 5
 ```
 
 ### 13.2 Connect
 
 ```cmd
-docker compose logs connect --tail=200
+docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml logs connect --tail=200
 ```
 
 ```cmd
@@ -241,7 +241,7 @@ curl http://localhost:8083/connectors/order-outbox-connector/status
 ### 13.3 MySQL Outbox
 
 ```cmd
-docker compose exec mysql mysql -uroot -proot -D delivery -e "select id, event_id, event_type, status, created_at from outbox order by created_at desc;"
+docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml exec mysql mysql -uroot -proot -D delivery -e "select id, event_id, event_type, status, created_at from outbox order by created_at desc;"
 ```
 
 ## 14. 정리
