@@ -1,0 +1,923 @@
+openapi: 3.0.3
+info:
+  title: AekioriEats Store API
+  version: "1.0.0-draft"
+  description: |
+    Store 도메인 API 초안.
+
+    - Command(쓰기): MySQL 기준
+    - Query(읽기): Elasticsearch 기준
+    - 공개 조회 API는 게이트웨이 경유 기준으로 설계
+    - owner API는 인증 주체(OWNER/ADMIN) 권한이 필요
+
+servers:
+  - url: http://localhost:8088
+    description: API Gateway
+
+tags:
+  - name: Owner Store Command
+    description: 점주/관리자용 Store 쓰기 API
+  - name: Owner Menu Command
+    description: 점주/관리자용 Menu 쓰기 API
+  - name: Store Query
+    description: 사용자용 Store 조회 API
+
+paths:
+  /api/v1/owner/stores:
+    post:
+      tags: [Owner Store Command]
+      summary: 가게 생성
+      operationId: createStore
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStoreRequest'
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreCreateResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "409":
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/owner/stores/{storeId}/status:
+    patch:
+      tags: [Owner Store Command]
+      summary: 가게 상태 변경
+      operationId: updateStoreStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStoreStatusRequest'
+      responses:
+        "200":
+          description: 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreSummary'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/delivery-policy:
+    put:
+      tags: [Owner Store Command]
+      summary: 배달 정책 수정
+      operationId: replaceDeliveryPolicy
+      description: 현재는 고정 deliveryTip만 지원하고, 거리별 차등은 미구현.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryPolicy'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreSummary'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/hours:
+    put:
+      tags: [Owner Store Command]
+      summary: 주간 영업시간 일괄 교체
+      operationId: replaceStoreHours
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceStoreHoursRequest'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreSummary'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/holidays:
+    put:
+      tags: [Owner Store Command]
+      summary: 임시 휴무일 일괄 교체
+      operationId: replaceStoreHolidays
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceStoreHolidaysRequest'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreSummary'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/menu-groups:
+    post:
+      tags: [Owner Menu Command]
+      summary: 메뉴 그룹 생성
+      operationId: createMenuGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuGroupRequest'
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuGroup'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/menus:
+    post:
+      tags: [Owner Menu Command]
+      summary: 메뉴 생성
+      operationId: createMenu
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuRequest'
+      responses:
+        "201":
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "409":
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/owner/stores/{storeId}/menus/{menuId}:
+    put:
+      tags: [Owner Menu Command]
+      summary: 메뉴 기본 정보 수정
+      operationId: replaceMenu
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/MenuId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMenuRequest'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Menu'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/menus/{menuId}/tags:
+    put:
+      tags: [Owner Menu Command]
+      summary: 메뉴 태그 전체 교체
+      operationId: replaceMenuTags
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/MenuId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceMenuTagsRequest'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  menuId:
+                    type: integer
+                    format: int64
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TagRef'
+                required: [menuId, tags]
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/owner/stores/{storeId}/menus/{menuId}/option-groups:
+    put:
+      tags: [Owner Menu Command]
+      summary: 메뉴 옵션 그룹 전체 교체
+      operationId: replaceMenuOptionGroups
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/MenuId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceMenuOptionGroupsRequest'
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  menuId:
+                    type: integer
+                    format: int64
+                  optionGroups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OptionGroup'
+                required: [menuId, optionGroups]
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/stores/search:
+    get:
+      tags: [Store Query]
+      summary: 가게 검색
+      operationId: searchStores
+      description: |
+        Elasticsearch 조회 API.
+        쓰기 직후 검색 반영은 지연될 수 있음(eventual consistency).
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: 검색어 (예: 치킨)
+        - in: query
+          name: categoryIds
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: false
+        - in: query
+          name: tagIds
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: false
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum: [relevance, minDeliveryTip, minOrderAmount]
+            default: relevance
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreSearchPage'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/stores/{storeId}:
+    get:
+      tags: [Store Query]
+      summary: 가게 상세 조회 (메뉴 그룹 포함)
+      operationId: getStoreDetail
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      responses:
+        "200":
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreDetailResponse'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    StoreId:
+      in: path
+      name: storeId
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    MenuId:
+      in: path
+      name: menuId
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: 잘못된 요청
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: 인증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: 인가 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 리소스 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: 충돌
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CreateStoreRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        categoryIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        deliveryPolicy:
+          $ref: '#/components/schemas/DeliveryPolicy'
+        storeLogoUrl:
+          type: string
+          format: uri
+      required: [name]
+
+    UpdateStoreStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OPEN, CLOSED, BREAK]
+      required: [status]
+
+    ReplaceStoreHoursRequest:
+      type: object
+      properties:
+        weeklyHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreHour'
+      required: [weeklyHours]
+
+    ReplaceStoreHolidaysRequest:
+      type: object
+      properties:
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreHoliday'
+      required: [holidays]
+
+    CreateMenuGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+      required: [name]
+
+    CreateMenuRequest:
+      type: object
+      properties:
+        menuGroupId:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        price:
+          type: integer
+          minimum: 0
+        imageUrl:
+          type: string
+          format: uri
+        isAvailable:
+          type: boolean
+          default: true
+      required: [name, price]
+
+    UpdateMenuRequest:
+      type: object
+      properties:
+        menuGroupId:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        price:
+          type: integer
+          minimum: 0
+        imageUrl:
+          type: string
+          format: uri
+        isAvailable:
+          type: boolean
+        isSoldOut:
+          type: boolean
+      required: [name, price, isAvailable, isSoldOut]
+
+    ReplaceMenuTagsRequest:
+      type: object
+      properties:
+        tagNames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+      required: [tagNames]
+
+    ReplaceMenuOptionGroupsRequest:
+      type: object
+      properties:
+        optionGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionGroup'
+      required: [optionGroups]
+
+    StoreCreateResponse:
+      allOf:
+        - $ref: '#/components/schemas/StoreSummary'
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+          required: [createdAt]
+
+    StoreSummary:
+      type: object
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        ownerUserId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED, BREAK]
+        deliveryPolicy:
+          $ref: '#/components/schemas/DeliveryPolicy'
+        storeLogoUrl:
+          type: string
+          format: uri
+      required: [storeId, ownerUserId, name, status, deliveryPolicy]
+
+    StoreSearchPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreSearchItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+      required: [content, page, size, totalElements, totalPages]
+
+    StoreSearchItem:
+      type: object
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED, BREAK]
+        deliveryPolicy:
+          $ref: '#/components/schemas/DeliveryPolicy'
+        storeLogoUrl:
+          type: string
+          format: uri
+        matchedBy:
+          type: array
+          items:
+            type: string
+            enum: [STORE_NAME, CATEGORY, TAG, MENU_NAME]
+      required: [storeId, name, status, deliveryPolicy]
+
+    StoreDetailResponse:
+      type: object
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        ownerUserId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED, BREAK]
+        deliveryPolicy:
+          $ref: '#/components/schemas/DeliveryPolicy'
+        images:
+          type: object
+          properties:
+            storeLogoUrl:
+              type: string
+              format: uri
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryRef'
+        operatingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreHour'
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreHoliday'
+        menuGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuGroup'
+      required:
+        - storeId
+        - ownerUserId
+        - name
+        - status
+        - deliveryPolicy
+        - categories
+        - menuGroups
+
+    DeliveryPolicy:
+      type: object
+      properties:
+        minOrderAmount:
+          type: integer
+          minimum: 0
+        deliveryTip:
+          type: integer
+          minimum: 0
+      required: [minOrderAmount, deliveryTip]
+
+    CategoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      required: [id, name]
+
+    StoreHour:
+      type: object
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 1
+          maximum: 7
+        openTime:
+          type: string
+          nullable: true
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'
+        closeTime:
+          type: string
+          nullable: true
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'
+      required: [dayOfWeek]
+
+    StoreHoliday:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 100
+      required: [date]
+
+    MenuGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        menus:
+          type: array
+          items:
+            $ref: '#/components/schemas/Menu'
+      required: [id, name, menus]
+
+    Menu:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        menuGroupId:
+          type: integer
+          format: int64
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: integer
+        isAvailable:
+          type: boolean
+        isSoldOut:
+          type: boolean
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagRef'
+        optionGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionGroup'
+      required:
+        - id
+        - name
+        - price
+        - isAvailable
+        - isSoldOut
+        - tags
+        - optionGroups
+
+    TagRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      required: [id, name]
+
+    OptionGroup:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        isRequired:
+          type: boolean
+        isMultiple:
+          type: boolean
+        minSelectCount:
+          type: integer
+          minimum: 0
+        maxSelectCount:
+          type: integer
+          minimum: 0
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuOption'
+      required:
+        - name
+        - isRequired
+        - isMultiple
+        - minSelectCount
+        - maxSelectCount
+        - options
+
+    MenuOption:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        extraPrice:
+          type: integer
+          minimum: 0
+        isAvailable:
+          type: boolean
+      required: [name, extraPrice, isAvailable]
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        traceId:
+          type: string
+          nullable: true
+        code:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+          nullable: true
+      required: [timestamp, path, code, message]

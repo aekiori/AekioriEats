@@ -1,0 +1,173 @@
+{
+    "store": {
+        "id": 10001,
+        "ownerUserId": 101,
+        "name": "애기오리 마왕치킨 산본점",
+        "status": "OPEN",
+        "deliveryPolicy": {
+            "minOrderAmount": 17000,
+            "deliveryTip": 3000
+        },
+        "images": {
+            "storeLogoUrl": "https://cdn.aekiori.dev/store/10001/logo.png"
+        },
+        "categories": [
+            { "id": 11001, "name": "치킨" },
+            { "id": 11002, "name": "야식" },
+            { "id": 11003, "name": "맛집" }
+        ],
+        "operatingHours": [
+            { "dayOfWeek": 1, "openTime": "11:00:00", "closeTime": "23:00:00" },
+            { "dayOfWeek": 2, "openTime": "11:00:00", "closeTime": "23:00:00" },
+            { "dayOfWeek": 3, "openTime": "11:00:00", "closeTime": "23:00:00" },
+            { "dayOfWeek": 4, "openTime": "11:00:00", "closeTime": "23:00:00" },
+            { "dayOfWeek": 5, "openTime": "11:00:00", "closeTime": "23:30:00" },
+            { "dayOfWeek": 6, "openTime": "11:00:00", "closeTime": "23:30:00" },
+            { "dayOfWeek": 7, "openTime": null, "closeTime": null }
+        ],
+        "holidays": [
+            {
+                "date": "2026-12-25",
+                "reason": "성탄절 임시 휴무"
+            }
+        ],
+        "menuGroups": [
+            {
+                "id": 20001,
+                "name": "메인 메뉴",
+                "menus": [
+                    {
+                        "id": 30001,
+                        "name": "마왕치킨",
+                        "description": "중독성 강한 마왕 소스의 시그니처 매운 치킨.",
+                        "price": 19900,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30001.png",
+                        "tags": [
+                            { "id": 40001, "name": "시그니처" },
+                            { "id": 40002, "name": "매운맛" }
+                        ],
+                        "optionGroups": [
+                            {
+                                "name": "매운맛 단계 선택",
+                                "isRequired": true,
+                                "isMultiple": false,
+                                "minSelectCount": 1,
+                                "maxSelectCount": 1,
+                                "options": [
+                                    { "name": "순한맛", "extraPrice": 0, "isAvailable": true },
+                                    { "name": "보통맛", "extraPrice": 500, "isAvailable": true },
+                                    { "name": "핵매운맛", "extraPrice": 1000, "isAvailable": true }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": 30002,
+                        "name": "마왕 순살치킨",
+                        "description": "한입에 쏙! 마왕 소스를 듬뿍 바른 순살 치킨.",
+                        "price": 21900,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30002.png",
+                        "tags": [
+                            { "id": 40002, "name": "매운맛" }
+                        ],
+                        "optionGroups": []
+                    }
+                ]
+            },
+            {
+                "id": 20002,
+                "name": "사이드 메뉴",
+                "menus": [
+                    {
+                        "id": 30003,
+                        "name": "치즈볼 (5개)",
+                        "description": "쭉 늘어나는 치즈가 일품인 인기 사이드.",
+                        "price": 4500,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30003.png",
+                        "tags": [{ "id": 40004, "name": "사이드" }],
+                        "optionGroups": []
+                    },
+                    {
+                        "id": 30005,
+                        "name": "주먹밥",
+                        "description": "매운 치킨이랑 같이 먹기 좋은 찰떡궁합 사이드.",
+                        "price": 3000,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30005.png",
+                        "tags": [{ "id": 40004, "name": "사이드" }],
+                        "optionGroups": []
+                    },
+                    {
+                        "id": 30006,
+                        "name": "닭껍질튀김",
+                        "description": "바삭함의 끝판왕! 닭껍질 튀김.",
+                        "price": 4500,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30006.png",
+                        "tags": [{ "id": 40004, "name": "사이드" }],
+                        "optionGroups": [
+                            {
+                                "name": "소스 선택",
+                                "isRequired": true,
+                                "isMultiple": false,
+                                "minSelectCount": 1,
+                                "maxSelectCount": 1,
+                                "options": [
+                                    { "name": "소금", "extraPrice": 0, "isAvailable": true },
+                                    { "name": "칠리소스", "extraPrice": 0, "isAvailable": true }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": 20003,
+                "name": "음료/에너지",
+                "menus": [
+                    {
+                        "id": 30004,
+                        "name": "콜라 1.25L",
+                        "description": "치킨의 영원한 단짝, 시원한 콜라.",
+                        "price": 2500,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30004.png",
+                        "tags": [{ "id": 40005, "name": "음료" }],
+                        "optionGroups": []
+                    },
+                    {
+                        "id": 30007,
+                        "name": "몬스터 에너지",
+                        "description": "백엔드 개발자의 영혼의 동반자 355ml.",
+                        "price": 3000,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30007.png",
+                        "tags": [{ "id": 40005, "name": "음료" }],
+                        "optionGroups": []
+                    },
+                    {
+                        "id": 30008,
+                        "name": "핫식스",
+                        "description": "밤샘 코딩 사격 지원용 250ml.",
+                        "price": 2500,
+                        "isAvailable": true,
+                        "isSoldOut": false,
+                        "imageUrl": "https://cdn.aekiori.dev/store/10001/menu/30008.png",
+                        "tags": [{ "id": 40005, "name": "음료" }],
+                        "optionGroups": []
+                    }
+                ]
+            }
+        ]
+    }
+}
