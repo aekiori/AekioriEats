@@ -11,7 +11,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
@@ -72,12 +71,13 @@ public class UserCreatedEventConsumer {
             );
         } catch (UnprocessableEventException exception) {
             log.warn(
-                "UserCreated event skipped (unprocessable). topic={}, offset={}, key={}, reason={}",
+                "UserCreated event unprocessable, routing to DLQ. topic={}, offset={}, key={}, reason={}",
                 record.topic(),
                 record.offset(),
                 record.key(),
                 exception.getMessage()
             );
+            throw exception;
         } catch (Exception exception) {
             log.error(
                 "UserCreated consume failed. topic={}, offset={}, key={}",

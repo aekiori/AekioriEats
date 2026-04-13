@@ -38,6 +38,9 @@ user:
         source-topic: ${USER_EVENT_SOURCE_TOPIC:delivery.delivery_auth.outbox}
         smt-topic: ${USER_EVENT_SMT_TOPIC:outbox.event.USER}
         user-created-consumer-group: ${USER_EVENT_USER_CREATED_CONSUMER_GROUP:user-created-projection}
+        consumer:
+            retry-attempts: ${USER_EVENT_CONSUMER_RETRY_ATTEMPTS:3}
+            retry-interval-ms: ${USER_EVENT_CONSUMER_RETRY_INTERVAL_MS:1000}
 
 management:
     endpoints:
