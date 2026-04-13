@@ -25,6 +25,12 @@ topics = {
     config             = {}
   }
 
+  "delivery.delivery_payment.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
   "outbox.event.ORDER" = {
     partitions         = 1
     replication_factor = 1
@@ -32,6 +38,12 @@ topics = {
   }
 
   "outbox.event.USER" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PAYMENT" = {
     partitions         = 1
     replication_factor = 1
     config             = {}

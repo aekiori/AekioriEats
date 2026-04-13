@@ -24,6 +24,9 @@ if errorlevel 1 set "FAILED=1"
 call :upsert_connector "store-outbox-connector" "Store\infra\debezium\store-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
+call :upsert_connector "payment-outbox-connector" "Payment\infra\debezium\payment-outbox-connector-smt.json"
+if errorlevel 1 set "FAILED=1"
+
 if defined FAILED (
     echo.
     echo [FAIL] one or more connectors failed

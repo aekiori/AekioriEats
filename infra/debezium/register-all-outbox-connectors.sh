@@ -42,6 +42,7 @@ upsert_connector "order-outbox-connector" "Order/infra/debezium/order-outbox-con
 upsert_connector "user-outbox-connector" "User/infra/debezium/user-outbox-connector-smt.json" || FAILED=1
 upsert_connector "auth-outbox-connector" "Auth/infra/debezium/auth-outbox-connector-smt.json" || FAILED=1
 upsert_connector "store-outbox-connector" "Store/infra/debezium/store-outbox-connector-smt.json" || FAILED=1
+upsert_connector "payment-outbox-connector" "Payment/infra/debezium/payment-outbox-connector-smt.json" || FAILED=1
 
 if [[ "${FAILED}" -ne 0 ]]; then
   echo

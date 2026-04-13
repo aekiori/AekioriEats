@@ -55,6 +55,14 @@ topics:
       retention.ms: 9223372036854775807
       retention.bytes: -1
 
+  - name: schemahistory.delivery.payment
+    partitions: 1
+    replicationFactor: 1
+    configs:
+      cleanup.policy: delete
+      retention.ms: 9223372036854775807
+      retention.bytes: -1
+
   # Debezium source topics
   - name: delivery.delivery_order.outbox
     partitions: 1
@@ -72,12 +80,20 @@ topics:
     partitions: 1
     replicationFactor: 1
 
+  - name: delivery.delivery_payment.outbox
+    partitions: 1
+    replicationFactor: 1
+
   # SMT routed event topics
   - name: outbox.event.ORDER
     partitions: 1
     replicationFactor: 1
 
   - name: outbox.event.USER
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.PAYMENT
     partitions: 1
     replicationFactor: 1
 

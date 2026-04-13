@@ -66,6 +66,19 @@ services:
             SERVER_PORT: ${STORE_SERVER_PORT}
             SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${STORE_DB_NAME}
     ##################################################################################
+    payment-service:
+        <<: *app-defaults
+        build:
+            context: ../../Payment
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: payment-service
+        ports:
+            - "${PAYMENT_SERVER_PORT}:${PAYMENT_SERVER_PORT}"
+        environment:
+            <<: *app-db-kafka-env
+            SERVER_PORT: ${PAYMENT_SERVER_PORT}
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${PAYMENT_DB_NAME}
+    ##################################################################################
     gateway-service:
         <<: *app-defaults
         build:
@@ -82,6 +95,8 @@ services:
             order-service:
                 condition: service_started
             store-service:
+                condition: service_started
+            payment-service:
                 condition: service_started
         environment:
             SERVER_PORT: ${GATEWAY_SERVER_PORT}

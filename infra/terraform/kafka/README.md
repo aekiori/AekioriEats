@@ -72,6 +72,7 @@ terraform plan
 cd .\infra\terraform\kafka
 terraform import 'kafka_topic.topics["outbox.event.ORDER"]' outbox.event.ORDER
 terraform import 'kafka_topic.topics["outbox.event.USER"]' outbox.event.USER
+terraform import 'kafka_topic.topics["outbox.event.PAYMENT"]' outbox.event.PAYMENT
 ```
 
 `topics`에 선언된 토픽은 동일한 방식으로 모두 import하면 됩니다.
