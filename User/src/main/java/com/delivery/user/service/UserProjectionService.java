@@ -2,6 +2,7 @@ package com.delivery.user.service;
 
 import com.delivery.user.domain.user.User;
 import com.delivery.user.dto.event.UserCreatedEventDto;
+import com.delivery.user.exception.UnprocessableEventException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -63,8 +64,11 @@ public class UserProjectionService {
     }
 
     private String normalizeStatus(String status) {
-        // todo -- auth 도메인에서 보내는거긴 한데, 신뢰 할 수 있나?
-        return User.Status.valueOf(status.trim().toUpperCase(Locale.ROOT)).name();
+        try {
+            return User.Status.valueOf(status.trim().toUpperCase(Locale.ROOT)).name();
+        } catch (IllegalArgumentException exception) {
+            throw new UnprocessableEventException("Unknown user status: " + status);
+        }
     }
     private Timestamp toTimestamp(LocalDateTime dateTime) {
         if (dateTime == null) {

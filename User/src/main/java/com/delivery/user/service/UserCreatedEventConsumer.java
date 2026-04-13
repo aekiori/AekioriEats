@@ -2,6 +2,7 @@ package com.delivery.user.service;
 
 import com.delivery.user.constant.UserEventType;
 import com.delivery.user.dto.event.UserCreatedEventDto;
+import com.delivery.user.exception.UnprocessableEventException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -68,6 +69,14 @@ public class UserCreatedEventConsumer {
                 event.schemaVersion(),
                 event.occurredAt(),
                 record.offset()
+            );
+        } catch (UnprocessableEventException exception) {
+            log.warn(
+                "UserCreated event skipped (unprocessable). topic={}, offset={}, key={}, reason={}",
+                record.topic(),
+                record.offset(),
+                record.key(),
+                exception.getMessage()
             );
         } catch (Exception exception) {
             log.error(
