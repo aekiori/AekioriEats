@@ -30,7 +30,8 @@ public class KafkaConsumerConfig {
     ) {
         CommonErrorHandler errorHandler = buildErrorHandler(kafkaTemplate);
 
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
+            new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(errorHandler);
 
@@ -39,9 +40,10 @@ public class KafkaConsumerConfig {
 
     private CommonErrorHandler buildErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
         // 실패 메시지를 {원본토픽}.DLT 토픽으로 전송
-        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
-            kafkaTemplate,
-            (ConsumerRecord<?, ?> record, Exception ex) -> new TopicPartition(record.topic() + ".DLT", -1)
+
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
+            (ConsumerRecord<?, ?> record, Exception ex) ->
+                new org.apache.kafka.common.TopicPartition(record.topic() + ".DLT", -1)
         );
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(

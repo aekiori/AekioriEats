@@ -44,6 +44,10 @@ auth:
         expected-insertions: ${AUTH_BLOOM_EXPECTED_INSERTIONS:5000000}
         fpp: ${AUTH_BLOOM_FPP:0.01}
         warmup-batch-size: ${AUTH_BLOOM_WARMUP_BATCH_SIZE:10000}
+    token:
+        cleanup:
+            cron: ${AUTH_TOKEN_CLEANUP_CRON:0 0 5 * * *}
+            batch-size: ${AUTH_TOKEN_CLEANUP_BATCH_SIZE:500}
     rate-limit:
         enabled: ${AUTH_RATE_LIMIT_ENABLED:true}
         cleanup-threshold: ${AUTH_RATE_LIMIT_CLEANUP_THRESHOLD:100000}
