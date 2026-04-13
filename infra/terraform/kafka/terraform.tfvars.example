@@ -1,0 +1,39 @@
+bootstrap_servers = ["localhost:9092"]
+
+topics = {
+  "delivery.delivery_order.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "delivery.delivery_user.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "delivery.delivery_auth.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "delivery.delivery_store.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.ORDER" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.USER" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+}

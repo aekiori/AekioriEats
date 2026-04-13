@@ -124,39 +124,6 @@ public class StoreQueryService {
         return storeHourRepository.findHoursByStoreId(storeId);
     }
 
-    public boolean isOpenNow(List<StoreHour> hoursList, LocalDateTime now) {
-        int today = now.getDayOfWeek().getValue();   // 1~7
-        int yesterday = today == 1 ? 7 : today - 1;
-        LocalTime currentTime = now.toLocalTime();
-
-        for (StoreHour h : hoursList) {
-            // 뭐 월요일마다 정기휴무라던가.
-            if (h.getOpenTime() == null || h.getCloseTime() == null) continue;
-
-            if (h.getDayOfWeek() == today && isOpenAtTime(h, currentTime)) { // 오늘 기준
-                return true;
-            }
-
-            // 18:00 ~ 03:00 같은 심야영업 이뤄지는경우
-            if (h.getDayOfWeek() == yesterday && isLateNight(h) && currentTime.isBefore(h.getCloseTime())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean isOpenAtTime(StoreHour h, LocalTime now) {
-        if (isLateNight(h)) {
-            return !now.isBefore(h.getOpenTime()) || now.isBefore(h.getCloseTime());
-        }
-        return !now.isBefore(h.getOpenTime()) && now.isBefore(h.getCloseTime());
-    }
-
-    private boolean isLateNight(StoreHour h) {
-        return h.getCloseTime().isBefore(h.getOpenTime());
-    }
-
     private List<StoreQueryDtos.StoreHolidayDto> loadHolidays(Long storeId) {
         return storeHolidayRepository.findUpcomingHolidaysByStoreId(storeId, LocalDate.now());
     }

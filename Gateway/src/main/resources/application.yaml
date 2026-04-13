@@ -19,6 +19,10 @@ spring:
                   uri: ${GATEWAY_ORDER_SERVICE_URI:http://localhost:8081}
                   predicates:
                       - Path=/api/v1/orders/**
+                - id: store-service
+                  uri: ${GATEWAY_STORE_SERVICE_URI:http://localhost:8085}
+                  predicates:
+                      - Path=/api/v1/stores/**,/api/v1/owner/stores/**
 
 gateway:
     auth:

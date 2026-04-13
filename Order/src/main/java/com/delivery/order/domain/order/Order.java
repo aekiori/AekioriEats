@@ -45,7 +45,7 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Order extends AbstractAggregateRoot<Order> {
-    public enum Status {PENDING, PAID, FAILED, CANCELLED}
+    public enum Status {PENDING, PAYMENT_PENDING, PAID, FAILED, CANCELLED}
 
     private static final Map<Status, Set<Status>> ALLOWED_STATUS_TRANSITIONS = createAllowedStatusTransitions();
 
@@ -134,7 +134,8 @@ public class Order extends AbstractAggregateRoot<Order> {
 
     private static Map<Status, Set<Status>> createAllowedStatusTransitions() {
         Map<Status, Set<Status>> transitions = new EnumMap<>(Status.class);
-        transitions.put(Status.PENDING, EnumSet.of(Status.PAID, Status.FAILED, Status.CANCELLED));
+        transitions.put(Status.PENDING, EnumSet.of(Status.PAYMENT_PENDING, Status.PAID, Status.FAILED, Status.CANCELLED));
+        transitions.put(Status.PAYMENT_PENDING, EnumSet.of(Status.PAID, Status.FAILED, Status.CANCELLED));
         transitions.put(Status.PAID, EnumSet.of(Status.CANCELLED));
         transitions.put(Status.FAILED, EnumSet.noneOf(Status.class));
         transitions.put(Status.CANCELLED, EnumSet.noneOf(Status.class));

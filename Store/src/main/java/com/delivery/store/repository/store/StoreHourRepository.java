@@ -10,6 +10,10 @@ import java.util.List;
 public interface StoreHourRepository extends JpaRepository<StoreHour, Long> {
     void deleteByStoreId(Long storeId);
 
+    List<StoreHour> findByStoreIdOrderByDayOfWeekAsc(Long storeId);
+
+
+
     @Query("""
         SELECT h.dayOfWeek AS dayOfWeek, h.openTime AS openTime, h.closeTime AS closeTime
         FROM StoreHour h

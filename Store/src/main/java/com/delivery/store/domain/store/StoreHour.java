@@ -39,9 +39,6 @@ public class StoreHour {
     @Column(name = "close_time")
     private LocalTime closeTime;
 
-    @Column(name = "is_closed", nullable = false)
-    private boolean isClosed;
-
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -50,15 +47,14 @@ public class StoreHour {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    private StoreHour(Long storeId, int dayOfWeek, LocalTime openTime, LocalTime closeTime, boolean isClosed) {
+    private StoreHour(Long storeId, int dayOfWeek, LocalTime openTime, LocalTime closeTime) {
         this.storeId = storeId;
         this.dayOfWeek = (byte) dayOfWeek;
         this.openTime = openTime;
         this.closeTime = closeTime;
-        this.isClosed = isClosed;
     }
 
-    public static StoreHour create(Long storeId, int dayOfWeek, LocalTime openTime, LocalTime closeTime, boolean isClosed) {
-        return new StoreHour(storeId, dayOfWeek, openTime, closeTime, isClosed);
+    public static StoreHour create(Long storeId, int dayOfWeek, LocalTime openTime, LocalTime closeTime) {
+        return new StoreHour(storeId, dayOfWeek, openTime, closeTime);
     }
 }

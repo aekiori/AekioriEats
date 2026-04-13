@@ -14,9 +14,15 @@ USER_DB_NAME=delivery_user
 AUTH_SERVER_PORT=8084
 AUTH_DB_NAME=delivery_auth
 
+STORE_SERVER_PORT=8085
+STORE_DB_NAME=delivery_store
+
 GATEWAY_SERVER_PORT=8088
 GATEWAY_ORDER_SERVICE_URI=http://order-service:8081
 GATEWAY_USER_SERVICE_URI=http://user-service:8082
 GATEWAY_AUTH_SERVICE_URI=http://auth-service:8084
+GATEWAY_STORE_SERVICE_URI=http://store-service:8085
+FRONTEND_SERVER_PORT=3001
+FRONTEND_BACKEND_BASE_URL=http://host.docker.internal:8088
 
 AUTH_JWT_SECRET=auth-super-secret-auth-super-secret-2026

@@ -15,16 +15,15 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalTime;
+import java.util.*;
 
 @Getter
 @Entity
@@ -42,6 +41,7 @@ import java.util.Set;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
+@Slf4j
 public class Store {
     public enum Status {OPEN, CLOSED, BREAK}
 
@@ -124,5 +124,49 @@ public class Store {
         transitions.put(Status.CLOSED, EnumSet.of(Status.OPEN, Status.BREAK));
         transitions.put(Status.BREAK, EnumSet.of(Status.OPEN, Status.CLOSED));
         return Collections.unmodifiableMap(transitions);
+    }
+
+    public boolean isOpenNow(List<StoreHour> hoursList, List<LocalDate> holidays, LocalDateTime now) {
+        if (! this.status.equals(Status.OPEN)) {
+            return false;
+        }
+
+        if (holidays.contains(now.toLocalDate())) {
+            return false;
+        }
+
+        int today = now.getDayOfWeek().getValue();   // 1~7
+        int yesterday = today == 1 ? 7 : today - 1;
+        LocalTime currentTime = now.toLocalTime();
+
+        for (StoreHour h : hoursList) {
+            // 뭐 월요일마다 정기휴무라던가.
+            if (h.getOpenTime() == null || h.getCloseTime() == null) continue;
+
+            if (h.getDayOfWeek() == today && isOpenAtTime(h, currentTime)) { // 오늘 기준
+                return true;
+            }
+
+            // 18:00 ~ 03:00 같은 심야영업 이뤄지는경우
+            if (h.getDayOfWeek() == yesterday && isLateNight(h) && currentTime.isBefore(h.getCloseTime())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isOpenAtTime(StoreHour h, LocalTime now) {
+        log.info("isOpenAtTime: now={}, open={}, close={}, isLateNight={}",
+            now, h.getOpenTime(), h.getCloseTime(), isLateNight(h));
+        if (isLateNight(h)) {
+            log.info("lateNight result={}", !now.isBefore(h.getOpenTime()) || now.isBefore(h.getCloseTime()));
+            return !now.isBefore(h.getOpenTime()) || now.isBefore(h.getCloseTime());
+        }
+        return !now.isBefore(h.getOpenTime()) && now.isBefore(h.getCloseTime());
+    }
+
+    private boolean isLateNight(StoreHour h) {
+        return h.getCloseTime().isBefore(h.getOpenTime());
     }
 }

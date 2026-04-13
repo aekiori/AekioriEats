@@ -53,6 +53,19 @@ services:
             SPRING_DATA_REDIS_PORT: ${APP_REDIS_PORT}
             ORDER_INTERNAL_API_KEY: ${ORDER_INTERNAL_API_KEY}
     ##################################################################################
+    store-service:
+        <<: *app-defaults
+        build:
+            context: ../../Store
+            dockerfile: ../docker/app/dockerfile/app.dockerfile
+        container_name: store-service
+        ports:
+            - "${STORE_SERVER_PORT}:${STORE_SERVER_PORT}"
+        environment:
+            <<: *app-db-kafka-env
+            SERVER_PORT: ${STORE_SERVER_PORT}
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${STORE_DB_NAME}
+    ##################################################################################
     gateway-service:
         <<: *app-defaults
         build:
@@ -68,10 +81,25 @@ services:
                 condition: service_started
             order-service:
                 condition: service_started
+            store-service:
+                condition: service_started
         environment:
             SERVER_PORT: ${GATEWAY_SERVER_PORT}
             AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
             GATEWAY_AUTH_SERVICE_URI: ${GATEWAY_AUTH_SERVICE_URI}
             GATEWAY_USER_SERVICE_URI: ${GATEWAY_USER_SERVICE_URI}
             GATEWAY_ORDER_SERVICE_URI: ${GATEWAY_ORDER_SERVICE_URI}
+            GATEWAY_STORE_SERVICE_URI: ${GATEWAY_STORE_SERVICE_URI}
+    ##################################################################################
+    frontend-service:
+        <<: *app-defaults
+        build:
+            context: ../../frontend
+            dockerfile: ../docker/app/dockerfile/frontend.dockerfile
+        container_name: frontend-service
+        ports:
+            - "${FRONTEND_SERVER_PORT}:${FRONTEND_SERVER_PORT}"
+        environment:
+            PORT: ${FRONTEND_SERVER_PORT}
+            BACKEND_BASE_URL: ${FRONTEND_BACKEND_BASE_URL}
     ##################################################################################

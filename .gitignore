@@ -36,6 +36,28 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
 # JVM Crash logs
 hs_err_pid*
 replay_pid*
+
+# Local tool/worktree metadata
+.claude/
+.run/
+
+# Local Gradle user-home caches
+**/.gradle-home/
+
+# Local Windows maintenance artifacts
+icon-thumb-cache-backup-*/
+taskmgr-dumps/
+taskmgr-reg-backup-*.reg
+reset-taskmgr-settings.reg
+run-windows-repair.ps1

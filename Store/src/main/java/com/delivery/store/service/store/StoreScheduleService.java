@@ -102,14 +102,12 @@ public class StoreScheduleService {
     private StoreHour toStoreHour(Long storeId, StoreHourRequest request) {
         LocalTime openTime = parseNullableTime(request.openTime(), "openTime");
         LocalTime closeTime = parseNullableTime(request.closeTime(), "closeTime");
-        boolean isClosed = openTime == null && closeTime == null;
 
         return StoreHour.create(
             storeId,
             request.dayOfWeek(),
             openTime,
-            closeTime,
-            isClosed
+            closeTime
         );
     }
 

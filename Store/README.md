@@ -7,8 +7,30 @@
 - 상점 상세 조회
 - 상점 상태 변경 (`OPEN`, `CLOSED`, `BREAK`)
 - `X-User-Id`, `X-User-Role` 기반 owner/admin 인가
+- `OrderCreated` 이벤트 소비 후 가게 주문 검증 결과 저장
 
 `delivery_tip`은 지금 고정 금액으로만 동작함. 거리별 차등 배달비는 아직 미구현 상태임.
+
+## 주문 검증 컨슈머
+- 토픽: `delivery.delivery_order.outbox`, `outbox.event.ORDER`
+- 이벤트 타입: `OrderCreated`
+- 검증 규칙:
+  - 가게 존재 여부
+  - 가게 상태(`OPEN`) 여부
+  - 주문 총액(`totalAmount`) >= 최소주문금액(`minOrderAmount`)
+- 검증 결과는 `store_order_validation` 테이블에 저장한다.
+
+```sql
+CREATE TABLE store_order_validation (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    store_id BIGINT NOT NULL,
+    result ENUM('ACCEPTED','REJECTED') NOT NULL,
+    reject_code VARCHAR(50),
+    reject_reason VARCHAR(200),
+    validated_at DATETIME NOT NULL
+);
+```
 
 ## API
 

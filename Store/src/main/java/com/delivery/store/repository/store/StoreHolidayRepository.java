@@ -15,6 +15,9 @@ public interface StoreHolidayRepository extends JpaRepository<StoreHoliday, Long
     // 영업 판단용
     boolean existsByStoreIdAndHolidayDate(Long storeId, LocalDate holidayDate);
 
+    @Query("SELECT h.holidayDate FROM StoreHoliday h WHERE h.storeId = :storeId")
+    List<LocalDate> findHolidayDatesByStoreId(Long storeId);
+
     @Query("""
         SELECT h.holidayDate AS date, h.reason AS reason
         FROM StoreHoliday h
