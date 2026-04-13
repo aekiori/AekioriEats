@@ -17,7 +17,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetOrdersService {
     private final OrderReader orderReader;
-    private final OrderAuthorizationService orderAuthorizationService;
 
     @Transactional(readOnly = true)
     public OrderPageResultDto getOrders(Long userId, Order.Status status, int page, int limit) {
@@ -29,18 +28,5 @@ public class GetOrdersService {
             .toList();
 
         return OrderPageResultDto.from(orderPage, content);
-    }
-
-    @Transactional(readOnly = true)
-    public OrderPageResultDto getOrders(
-        Long userId,
-        Order.Status status,
-        int page,
-        int limit,
-        long authenticatedUserId,
-        String authenticatedUserRole
-    ) {
-        orderAuthorizationService.requireSelfOrAdmin(authenticatedUserId, userId, authenticatedUserRole);
-        return getOrders(userId, status, page, limit);
     }
 }

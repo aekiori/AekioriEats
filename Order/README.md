@@ -18,7 +18,8 @@
 ## 인가 정책 (P0)
 - 인증 주체는 Gateway 주입 헤더(`X-User-Id`, `X-User-Role`) 기준으로만 판단한다.
 - `POST /api/v1/orders`: body `userId`와 인증 주체가 같아야 한다. (`ADMIN`은 예외)
-- `GET /api/v1/orders?userId=...`: 조회 대상 `userId`와 인증 주체가 같아야 한다. (`ADMIN`은 예외)
+- `GET /api/v1/orders`: 인증된 본인 주문만 조회한다.
+- `GET /api/v1/admin/orders?userId=...`: `ADMIN`만 특정 사용자 주문을 조회할 수 있다.
 - `GET /api/v1/orders/{orderId}`: 주문 소유자만 조회 가능하다. (`ADMIN`은 예외)
 - `PATCH /api/v1/orders/{orderId}/status`: 주문 소유자만 상태 변경 가능하다. (`ADMIN`은 예외)
 - 소유권 위반은 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.

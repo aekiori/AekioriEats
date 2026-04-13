@@ -34,8 +34,10 @@ public class OrderAuthorizationService {
         }
     }
 
-    public void requireOrderOwnerOrAdmin(long authenticatedUserId, long ownerUserId, String authenticatedUserRole) {
-        requireSelfOrAdmin(authenticatedUserId, ownerUserId, authenticatedUserRole);
+    public void requireAdmin(String authenticatedUserRole) {
+        if (!isAdmin(authenticatedUserRole)) {
+            throw forbiddenResourceAccess();
+        }
     }
 
     private boolean isAdmin(String role) {

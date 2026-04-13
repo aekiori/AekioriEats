@@ -43,7 +43,7 @@ public class KafkaConsumerConfig {
 
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
             (ConsumerRecord<?, ?> record, Exception ex) ->
-                new org.apache.kafka.common.TopicPartition(record.topic() + ".DLT", -1)
+                new TopicPartition(record.topic() + ".DLT", -1)
         );
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(

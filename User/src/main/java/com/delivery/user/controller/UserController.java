@@ -36,9 +36,9 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserDetailResultDto> getUser(
         @PathVariable Long userId,
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole
     ) {
         long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
@@ -49,9 +49,9 @@ public class UserController {
     public ResponseEntity<UserDetailResultDto> updateUserStatus(
         @PathVariable Long userId,
         @Valid @RequestBody UpdateUserStatusDto request,
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole
     ) {
         long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);

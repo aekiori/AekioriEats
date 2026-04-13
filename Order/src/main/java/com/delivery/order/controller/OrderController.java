@@ -43,9 +43,9 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<CreateOrderResultDto> createOrder(
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole,
         @RequestHeader("X-Idempotency-Key")
         @NotBlank
@@ -67,9 +67,9 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailResultDto> getOrder(
         @PathVariable Long orderId,
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole
     ) {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
@@ -77,19 +77,28 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<OrderPageResultDto> getOrders(
-        @RequestParam Long userId,
+    public ResponseEntity<OrderPageResultDto> getMyOrders(
         @RequestParam(required = false) Order.Status status,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) int limit,
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
+        String authenticatedUserIdHeader
+    ) {
+        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        return ResponseEntity.ok(getOrdersService.getOrders(authenticatedUserId, status, page, limit));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<UpdateOrderStatusResultDto> cancelOrder(
+        @PathVariable Long orderId,
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole
     ) {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         return ResponseEntity.ok(
-            getOrdersService.getOrders(userId, status, page, limit, authenticatedUserId, authenticatedUserRole)
+            updateOrderStatusService.cancelOrder(orderId, authenticatedUserId, authenticatedUserRole)
         );
     }
 
@@ -97,17 +106,16 @@ public class OrderController {
     public ResponseEntity<UpdateOrderStatusResultDto> updateOrderStatus(
         @PathVariable Long orderId,
         @Valid @RequestBody UpdateOrderStatusDto updateOrderStatusDto,
-        @RequestHeader(value = "X-User-Id", required = false)
+        @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = false)
+        @RequestHeader(value = "X-User-Role", required = true)
         String authenticatedUserRole
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         return ResponseEntity.ok(
             updateOrderStatusService.updateOrderStatus(
                 orderId,
                 updateOrderStatusDto,
-                authenticatedUserId,
                 authenticatedUserRole
             )
         );

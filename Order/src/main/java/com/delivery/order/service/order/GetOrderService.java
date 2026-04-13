@@ -26,7 +26,7 @@ public class GetOrderService {
     @Transactional(readOnly = true)
     public OrderDetailResultDto getOrder(Long orderId, long authenticatedUserId, String authenticatedUserRole) {
         Order order = orderReader.findOrder(orderId);
-        orderAuthorizationService.requireOrderOwnerOrAdmin(
+        orderAuthorizationService.requireSelfOrAdmin(
             authenticatedUserId,
             order.getUserId(),
             authenticatedUserRole
