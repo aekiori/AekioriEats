@@ -134,3 +134,46 @@ curl http://localhost:8083/connectors/order-outbox-connector/status
 - [Prometheus / Grafana 로컬 구성](docs/prometheus-grafana.md)
 - [도메인 대시보드 PromQL 템플릿](docs/promql-dashboard-template.md)
 - [Order 서비스 문서](Order/README.md)
+
+## Kafka Message Format
+
+Outbox 이벤트는 Debezium EventRouter SMT를 통해 Kafka로 발행된다.
+
+예시 토픽:
+- `outbox.event.OrderCreated`
+- `outbox.event.OrderValidated`
+- `outbox.event.OrderRejected`
+- `outbox.event.PaymentRequested`
+- `outbox.event.PaymentSucceeded`
+- `outbox.event.PaymentFailed`
+
+메시지 구조 예시:
+
+```json
+{
+  "topic": "outbox.event.OrderCreated",
+  "partition": 0,
+  "offset": 0,
+  "key": {
+    "payload": "1"
+  },
+  "headers": {
+    "id": "1a2cfb6d-979e-4166-b9fb-a35f84207e96",
+    "eventType": "OrderCreated",
+    "aggregateId": "1"
+  },
+  "value": {
+    "eventId": "1a2cfb6d-979e-4166-b9fb-a35f84207e96",
+    "eventType": "OrderCreated",
+    "orderId": 1,
+    "storeId": 3,
+    "userId": 1,
+    "totalAmount": 19900,
+    "usedPointAmount": 0,
+    "finalAmount": 19900,
+    "occurredAt": "2026-04-15T21:16:04.9481829"
+  }
+}
+```
+
+토픽은 Terraform에서 명시적으로 관리하고, Kafka Connect 내부 토픽과 Debezium schema history 토픽은 각 컴포넌트가 관리한다.

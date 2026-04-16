@@ -97,6 +97,34 @@ topics:
     partitions: 1
     replicationFactor: 1
 
+  - name: outbox.event.OrderCreated
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.OrderStatusChanged
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.PaymentRequested
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.OrderValidated
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.OrderRejected
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.PaymentSucceeded
+    partitions: 1
+    replicationFactor: 1
+
+  - name: outbox.event.PaymentFailed
+    partitions: 1
+    replicationFactor: 1
+
 # 현재 운영/개발에서 존재할 수 있는 레거시 토픽(검증 시 경고 제외 대상)
 allowUnexpectedTopics:
   - delivery.delivery.outbox

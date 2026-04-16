@@ -28,6 +28,9 @@ export default function HomePage() {
           <Link href="/order/create" className="button secondary" style={{ width: "auto", paddingInline: 18 }}>
             Create order
           </Link>
+          <Link href="/payment/checkout" className="button secondary" style={{ width: "auto", paddingInline: 18 }}>
+            Payment
+          </Link>
         </div>
       </section>
       <SessionPanel />

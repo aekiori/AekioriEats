@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -20,7 +19,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(
-    name = "outbox",
+    name = "payment_outbox",
     indexes = {
         @Index(name = "idx_status_created_at", columnList = "status, created_at"),
         @Index(name = "idx_aggregate_type_aggregate_id", columnList = "aggregate_type, aggregate_id"),
@@ -30,13 +29,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Outbox {
     public enum AggregateType {ORDER, PAYMENT, POINT, STORE}
-    public enum Status {INIT, PUBLISHED, FAILED}
+    public enum Status {INIT, PUBLISHED}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "event_id", nullable = false, unique = true, length = 100)
+    @Column(name = "event_id", nullable = false, length = 36)
     private String eventId;
 
     @Enumerated(EnumType.STRING)
@@ -49,8 +48,7 @@ public class Outbox {
     @Column(name = "event_type", nullable = false, length = 100)
     private String eventType;
 
-    @Lob
-    @Column(name = "payload", nullable = false, columnDefinition = "json")
+    @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
 
     @Enumerated(EnumType.STRING)
@@ -83,10 +81,6 @@ public class Outbox {
 
     public void markPublished() {
         this.status = Status.PUBLISHED;
-    }
-
-    public void markFailed() {
-        this.status = Status.FAILED;
     }
 
     @PrePersist

@@ -206,12 +206,14 @@ public class CreateOrderService {
             payload.put("deliveryAddress", request.deliveryAddress());
             payload.put("usedPointAmount", request.usedPointAmount());
             payload.put("items", request.items().stream()
-                .map(item -> Map.of(
-                    "menuId", item.menuId(),
-                    "menuName", item.menuName(),
-                    "unitPrice", item.unitPrice(),
-                    "quantity", item.quantity()
-                ))
+                .map(item -> {
+                    Map<String, Object> itemMap = new LinkedHashMap<>();
+                    itemMap.put("menuId", item.menuId());
+                    itemMap.put("menuName", item.menuName());
+                    itemMap.put("unitPrice", item.unitPrice());
+                    itemMap.put("quantity", item.quantity());
+                    return itemMap;
+                })
                 .toList());
 
             String json = objectMapper.writeValueAsString(payload);

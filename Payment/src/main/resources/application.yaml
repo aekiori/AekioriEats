@@ -14,7 +14,7 @@ spring:
     jpa:
         hibernate:
             ddl-auto: validate
-        show-sql: true
+        show-sql: false
         database-platform: org.hibernate.dialect.MySQLDialect
 
     flyway:
@@ -34,9 +34,12 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 payment:
+    portone:
+        verify-enabled: ${PAYMENT_PORTONE_VERIFY_ENABLED:false}
+        api-base-url: ${PAYMENT_PORTONE_API_BASE_URL:https://api.portone.io}
+        api-secret: ${PAYMENT_PORTONE_API_SECRET:}
     order-event:
-        source-topic: ${PAYMENT_ORDER_EVENT_SOURCE_TOPIC:delivery.delivery_order.outbox}
-        smt-topic: ${PAYMENT_ORDER_EVENT_SMT_TOPIC:outbox.event.ORDER}
+        payment-requested-topic: ${PAYMENT_ORDER_EVENT_PAYMENT_REQUESTED_TOPIC:outbox.event.PaymentRequested}
         payment-requested-consumer-group: ${PAYMENT_ORDER_EVENT_PAYMENT_REQUESTED_CONSUMER_GROUP:payment-payment-requested}
 
 management:

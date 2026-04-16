@@ -24,8 +24,8 @@ public class StoreOrderValidationEventConsumer {
 
     @KafkaListener(
         topics = {
-            "${order.store-validation-event.source-topic:delivery.delivery_store.outbox}",
-            "${order.store-validation-event.smt-topic:outbox.event.ORDER}"
+            "${order.store-validation-event.order-validated-topic:outbox.event.OrderValidated}",
+            "${order.store-validation-event.order-rejected-topic:outbox.event.OrderRejected}"
         },
         groupId = "${order.store-validation-event.consumer-group:order-store-validation}"
     )

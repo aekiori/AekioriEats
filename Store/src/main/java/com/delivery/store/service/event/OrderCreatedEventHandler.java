@@ -24,12 +24,7 @@ public class OrderCreatedEventHandler {
         }
 
         outboxRepository.save(
-            StoreOrderValidationOutboxEvent.rejected(
-                event.orderId(),
-                event.storeId(),
-                result.code(),
-                result.message()
-            )
+            StoreOrderValidationOutboxEvent.rejected(event.orderId(), event.storeId(), result.code(), result.message())
         );
     }
 }

@@ -32,7 +32,7 @@ flowchart LR
     A["Create / Update Order"] --> B["orders / order_items / outbox"]
     B --> C["MySQL Binlog"]
     C --> D["Debezium Connector"]
-    D --> E["Kafka Topic: outbox.event.ORDER"]
+    D --> E["Kafka Topic: outbox.event.OrderCreated"]
     E --> F["Order Outbox Publish Status Consumer"]
     F --> G["outbox.status = PUBLISHED"]
 ```
@@ -102,7 +102,9 @@ Redis는 아래 키를 사용한다.
 주요 토픽:
 
 - `delivery.delivery.outbox`
-- `outbox.event.ORDER`
+- `outbox.event.OrderCreated`
+- `outbox.event.OrderStatusChanged`
+- `outbox.event.PaymentRequested`
 
 Outbox 상태:
 

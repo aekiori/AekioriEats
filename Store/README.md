@@ -12,7 +12,7 @@
 `delivery_tip`은 지금 고정 금액으로만 동작함. 거리별 차등 배달비는 아직 미구현 상태임.
 
 ## 주문 검증 컨슈머
-- 토픽: `delivery.delivery_order.outbox`, `outbox.event.ORDER`
+- 토픽: `outbox.event.OrderCreated`
 - 이벤트 타입: `OrderCreated`
 - 검증 규칙:
   - 가게 존재 여부

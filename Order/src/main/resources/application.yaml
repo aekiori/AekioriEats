@@ -13,7 +13,7 @@ spring:
     jpa:
         hibernate:
             ddl-auto: validate
-        show-sql: true
+        show-sql: false
         database-platform: org.hibernate.dialect.MySQLDialect
         properties:
             hibernate:
@@ -46,12 +46,13 @@ order:
         result-ttl-seconds: ${ORDER_IDEMPOTENCY_RESULT_TTL_SECONDS:600}
 
     outbox:
-        topic: ${ORDER_OUTBOX_TOPIC:delivery.delivery_order.outbox}
-        smt-topic: ${ORDER_OUTBOX_SMT_TOPIC:outbox.event.ORDER}
+        order-created-topic: ${ORDER_OUTBOX_ORDER_CREATED_TOPIC:outbox.event.OrderCreated}
+        order-status-changed-topic: ${ORDER_OUTBOX_ORDER_STATUS_CHANGED_TOPIC:outbox.event.OrderStatusChanged}
+        payment-requested-topic: ${ORDER_OUTBOX_PAYMENT_REQUESTED_TOPIC:outbox.event.PaymentRequested}
         publisher-consumer-group: ${ORDER_OUTBOX_PUBLISHER_CONSUMER_GROUP:order-outbox-status}
     store-validation-event:
-        source-topic: ${ORDER_STORE_VALIDATION_EVENT_SOURCE_TOPIC:delivery.delivery_store.outbox}
-        smt-topic: ${ORDER_STORE_VALIDATION_EVENT_SMT_TOPIC:outbox.event.ORDER}
+        order-validated-topic: ${ORDER_STORE_VALIDATION_EVENT_ORDER_VALIDATED_TOPIC:outbox.event.OrderValidated}
+        order-rejected-topic: ${ORDER_STORE_VALIDATION_EVENT_ORDER_REJECTED_TOPIC:outbox.event.OrderRejected}
         consumer-group: ${ORDER_STORE_VALIDATION_EVENT_CONSUMER_GROUP:order-store-validation}
     internal:
         api-key: ${ORDER_INTERNAL_API_KEY:order-internal-dev-key}

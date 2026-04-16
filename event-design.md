@@ -98,3 +98,26 @@
 - DLQ 모니터링 대시보드
 - 리플레이/재처리 툴 준비
 - 핵심 이벤트 end-to-end 추적용 `correlationId` 로깅
+
+## Kafka 토픽 라우팅
+
+Outbox 토픽은 `aggregate_type`이 아니라 `event_type` 기준으로 분리한다.
+
+Debezium 설정 기준:
+
+```json
+{
+  "transforms.outbox.route.by.field": "event_type",
+  "transforms.outbox.route.topic.replacement": "outbox.event.${routedByValue}"
+}
+```
+
+현재 주요 토픽:
+- `outbox.event.OrderCreated`: Store 서비스가 주문 생성 검증용으로 소비
+- `outbox.event.OrderValidated`: Order 서비스가 가게 검증 성공 결과 소비
+- `outbox.event.OrderRejected`: Order 서비스가 가게 검증 실패 결과 소비
+- `outbox.event.PaymentRequested`: Payment 서비스가 결제 요청용으로 소비
+- `outbox.event.PaymentSucceeded`: Order 서비스가 결제 성공 결과 소비 예정
+- `outbox.event.PaymentFailed`: Order 서비스가 결제 실패 결과 소비 예정
+
+이 방식은 컨슈머가 필요 없는 이벤트를 모두 받아서 `eventType`으로 필터링하는 비용을 줄이고, 토픽 단위로 이벤트 흐름을 더 명확히 보기 위한 선택이다.

@@ -1,6 +1,7 @@
 package com.delivery.payment.domain.payment;
 
 import com.delivery.payment.dto.event.PaymentRequestedEventDto;
+import com.delivery.payment.domain.payment.exception.InvalidPaymentStatusTransitionException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 
 @Getter
 @Entity
@@ -29,7 +31,17 @@ import java.time.LocalDateTime;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment {
-    public enum Status {REQUESTED, SUCCEEDED, FAILED, REFUNDED}
+    public enum Status {
+        PENDING,
+        SUCCESS,
+        FAILED;
+
+        public boolean isTerminal() {
+            return this == SUCCESS || this == FAILED;
+        }
+    }
+
+    public static final String DEFAULT_PG_TYPE = "KAKAOPAY";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,30 +50,24 @@ public class Payment {
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "store_id")
-    private Long storeId;
-
-    @Column(name = "total_amount")
-    private Integer totalAmount;
-
-    @Column(name = "used_point_amount")
-    private Integer usedPointAmount;
-
-    @Column(name = "final_amount")
-    private Integer finalAmount;
+    @Column(name = "amount", nullable = false)
+    private Integer amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 20)
     private Status status;
 
-    @Column(name = "fail_reason", length = 200)
-    private String failReason;
+    @Column(name = "pg_type", nullable = false, length = 20)
+    private String pgType;
 
-    @Column(name = "processed_at")
-    private LocalDateTime processedAt;
+    @Column(name = "pg_transaction_id", length = 100)
+    private String pgTransactionId;
+
+    @Column(name = "failed_reason", length = 200)
+    private String failedReason;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -72,41 +78,46 @@ public class Payment {
     private Payment(
         Long orderId,
         Long userId,
-        Long storeId,
-        Integer totalAmount,
-        Integer usedPointAmount,
-        Integer finalAmount
+        Integer amount
     ) {
         this.orderId = orderId;
         this.userId = userId;
-        this.storeId = storeId;
-        this.totalAmount = totalAmount;
-        this.usedPointAmount = usedPointAmount;
-        this.finalAmount = finalAmount;
-        this.status = Status.REQUESTED;
+        this.amount = amount;
+        this.status = Status.PENDING;
+        this.pgType = DEFAULT_PG_TYPE;
     }
 
     public static Payment requested(PaymentRequestedEventDto event) {
         return new Payment(
             event.orderId(),
             event.userId(),
-            event.storeId(),
-            event.totalAmount(),
-            event.usedPointAmount(),
             event.finalAmount()
         );
     }
 
-    public void markSucceeded() {
-        this.status = Status.SUCCEEDED;
-        this.failReason = null;
-        this.processedAt = LocalDateTime.now();
+    public void confirmSucceeded(String pgTransactionId) {
+        if (this.status == Status.SUCCESS) {
+            return;
+        }
+        requireTransition(Status.SUCCESS, EnumSet.of(Status.PENDING));
+        this.pgTransactionId = pgTransactionId;
+        this.failedReason = null;
+        this.status = Status.SUCCESS;
     }
 
     public void markFailed(String reason) {
+        if (this.status == Status.FAILED) {
+            return;
+        }
+        requireTransition(Status.FAILED, EnumSet.of(Status.PENDING));
         this.status = Status.FAILED;
-        this.failReason = reason;
-        this.processedAt = LocalDateTime.now();
+        this.failedReason = reason;
+    }
+
+    private void requireTransition(Status targetStatus, EnumSet<Status> allowedCurrentStatuses) {
+        if (!allowedCurrentStatuses.contains(this.status)) {
+            throw new InvalidPaymentStatusTransitionException(this.status, targetStatus);
+        }
     }
 
     @PrePersist

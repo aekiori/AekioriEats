@@ -78,6 +78,9 @@ services:
             <<: *app-db-kafka-env
             SERVER_PORT: ${PAYMENT_SERVER_PORT}
             SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${PAYMENT_DB_NAME}
+            PAYMENT_PORTONE_VERIFY_ENABLED: ${PAYMENT_PORTONE_VERIFY_ENABLED}
+            PAYMENT_PORTONE_API_BASE_URL: ${PAYMENT_PORTONE_API_BASE_URL}
+            PAYMENT_PORTONE_API_SECRET: ${PAYMENT_PORTONE_API_SECRET}
     ##################################################################################
     gateway-service:
         <<: *app-defaults
@@ -105,6 +108,7 @@ services:
             GATEWAY_USER_SERVICE_URI: ${GATEWAY_USER_SERVICE_URI}
             GATEWAY_ORDER_SERVICE_URI: ${GATEWAY_ORDER_SERVICE_URI}
             GATEWAY_STORE_SERVICE_URI: ${GATEWAY_STORE_SERVICE_URI}
+            GATEWAY_PAYMENT_SERVICE_URI: ${GATEWAY_PAYMENT_SERVICE_URI}
     ##################################################################################
     frontend-service:
         <<: *app-defaults
@@ -117,4 +121,6 @@ services:
         environment:
             PORT: ${FRONTEND_SERVER_PORT}
             BACKEND_BASE_URL: ${FRONTEND_BACKEND_BASE_URL}
+            NEXT_PUBLIC_PORTONE_STORE_ID: ${FRONTEND_PORTONE_STORE_ID}
+            NEXT_PUBLIC_PORTONE_CHANNEL_KEY: ${FRONTEND_PORTONE_CHANNEL_KEY}
     ##################################################################################

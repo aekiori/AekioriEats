@@ -63,6 +63,29 @@ terraform plan
 2. 과거에 state에 편입했다면 `terraform state rm`으로 분리합니다.
 3. 변경 후 `terraform plan`에서 `schemahistory.*` 관련 생성/수정/삭제가 없는지 확인합니다.
 
+## Outbox 이벤트 토픽 라우팅
+주문/가게/결제 outbox는 Debezium Outbox SMT의 `route.by.field = event_type` 기준으로 라우팅합니다.
+
+즉 `aggregate_type` 기준의 넓은 토픽(`outbox.event.ORDER`) 하나에 모든 주문 이벤트를 몰아넣지 않고, 이벤트 타입별 토픽으로 분리합니다.
+
+예시:
+- `OrderCreated` -> `outbox.event.OrderCreated`
+- `OrderValidated` -> `outbox.event.OrderValidated`
+- `OrderRejected` -> `outbox.event.OrderRejected`
+- `PaymentRequested` -> `outbox.event.PaymentRequested`
+- `PaymentSucceeded` -> `outbox.event.PaymentSucceeded`
+- `PaymentFailed` -> `outbox.event.PaymentFailed`
+
+장점:
+- 컨슈머가 필요한 이벤트 토픽만 구독합니다.
+- `pay-service`가 `OrderCreated`, `OrderValidated` 같은 불필요한 이벤트를 읽지 않습니다.
+- 이벤트 흐름과 Terraform 토픽 선언이 1:1로 보여 운영/디버깅이 쉽습니다.
+
+주의:
+- `event_type` 컬럼 값이 토픽명 뒤에 그대로 붙습니다.
+- outbox 저장 시 `event_type` 값을 바꾸면 Terraform 토픽, 컨슈머 설정, 문서도 같이 맞춰야 합니다.
+- `outbox.event.ORDER`, `outbox.event.USER`, `outbox.event.PAYMENT` 같은 aggregate 기준 토픽은 레거시/전환용으로 남겨둘 수 있지만, 신규 주문-결제 플로우 컨슈머는 이벤트 타입별 토픽을 구독합니다.
+
 ## 기존 클러스터 편입(Import)
 이미 존재하는 토픽을 Terraform으로 관리하려면 apply 전에 import를 수행하세요.
 

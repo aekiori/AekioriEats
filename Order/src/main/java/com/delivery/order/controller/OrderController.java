@@ -3,10 +3,7 @@ package com.delivery.order.controller;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.request.CreateOrderDto;
 import com.delivery.order.dto.request.UpdateOrderStatusDto;
-import com.delivery.order.dto.response.CreateOrderResultDto;
-import com.delivery.order.dto.response.OrderDetailResultDto;
-import com.delivery.order.dto.response.OrderPageResultDto;
-import com.delivery.order.dto.response.UpdateOrderStatusResultDto;
+import com.delivery.order.dto.response.*;
 import com.delivery.order.service.order.CreateOrderService;
 import com.delivery.order.service.order.GetOrderService;
 import com.delivery.order.service.order.GetOrdersService;
@@ -74,6 +71,19 @@ public class OrderController {
     ) {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         return ResponseEntity.ok(getOrderService.getOrder(orderId, authenticatedUserId, authenticatedUserRole));
+    }
+
+    @GetMapping("/{orderId}/status")
+    public ResponseEntity<OrderStatusResultDto> getOrderStatus(
+        @PathVariable Long orderId,
+        @RequestHeader(value = "X-User-Id", required = true)
+        String authenticatedUserIdHeader,
+        @RequestHeader(value = "X-User-Role", required = true)
+        String authenticatedUserRole
+    )
+    {
+        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        return ResponseEntity.ok(getOrderService.getOrderStatus(orderId, authenticatedUserId, authenticatedUserRole));
     }
 
     @GetMapping

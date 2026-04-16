@@ -27,6 +27,7 @@ export default function RootLayout({
               <Link href="/store/owner">Store owner</Link>
               <Link href="/store/detail">Store detail</Link>
               <Link href="/order/create">Create order</Link>
+              <Link href="/payment/checkout">Payment</Link>
             </nav>
           </div>
         </header>

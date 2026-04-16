@@ -3,6 +3,7 @@ package com.delivery.order.service.order;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.response.OrderDetailResultDto;
 import com.delivery.order.dto.response.OrderItemResultDto;
+import com.delivery.order.dto.response.OrderStatusResultDto;
 import com.delivery.order.repository.order.OrderItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,17 @@ public class GetOrderService {
             authenticatedUserRole
         );
         return buildOrderDetail(order);
+    }
+
+    public OrderStatusResultDto getOrderStatus(Long orderId, long authenticatedUserId, String authenticatedUserRole)
+    {
+        Order order = orderReader.findOrder(orderId);
+        orderAuthorizationService.requireSelfOrAdmin(
+            authenticatedUserId,
+            order.getUserId(),
+            authenticatedUserRole
+        );
+        return OrderStatusResultDto.from(order);
     }
 
     private OrderDetailResultDto buildOrderDetail(Order order) {

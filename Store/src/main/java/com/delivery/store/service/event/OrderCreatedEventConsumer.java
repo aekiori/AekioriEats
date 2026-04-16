@@ -13,26 +13,19 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class OrderCreatedEventConsumer {
     private final ObjectMapper objectMapper;
     private final OrderCreatedEventHandler orderCreatedEventHandler;
 
     @KafkaListener(
-        topics = {
-            "${store.order-event.source-topic:delivery.delivery_order.outbox}",
-            "${store.order-event.smt-topic:outbox.event.ORDER}"
-        },
+        topics = "${store.order-event.order-created-topic:outbox.event.OrderCreated}",
         groupId = "${store.order-event.order-created-consumer-group:store-order-created-validation}"
     )
     public void consume(ConsumerRecord<String, String> record) {
         try {
-            log.info("now={}, zone={}", LocalDateTime.now(), ZoneId.systemDefault());
-
             OrderCreatedEventDto event = extractEvent(record);
             if (event == null || !event.eventType().equals(OrderEventType.ORDER_CREATED)) {
                 return;

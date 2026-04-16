@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { SessionPanel } from "@/components/SessionPanel";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
 import { apiRequest, HttpError } from "@/lib/http";
@@ -285,7 +286,17 @@ export default function CreateOrderPage() {
               Create order
             </button>
           </form>
-          {createdOrder && <pre className="pre">{JSON.stringify(createdOrder, null, 2)}</pre>}
+          {createdOrder && (
+            <div className="stack">
+              <Link
+                className="button secondary"
+                href={`/payment/checkout?orderId=${createdOrder.orderId}&amount=${createdOrder.finalAmount}`}
+              >
+                Go to payment checkout
+              </Link>
+              <pre className="pre">{JSON.stringify(createdOrder, null, 2)}</pre>
+            </div>
+          )}
         </section>
 
         <section className="card stack">

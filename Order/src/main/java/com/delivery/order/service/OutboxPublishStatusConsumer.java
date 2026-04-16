@@ -22,8 +22,9 @@ public class OutboxPublishStatusConsumer {
 
     @KafkaListener(
         topics = {
-            "${order.outbox.topic:delivery.delivery_order.outbox}",
-            "${order.outbox.smt-topic:outbox.event.ORDER}"
+            "${order.outbox.order-created-topic:outbox.event.OrderCreated}",
+            "${order.outbox.order-status-changed-topic:outbox.event.OrderStatusChanged}",
+            "${order.outbox.payment-requested-topic:outbox.event.PaymentRequested}"
         },
         groupId = "${order.outbox.publisher-consumer-group:order-outbox-status}"
     )

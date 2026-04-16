@@ -6,6 +6,7 @@ import com.delivery.order.domain.order.event.OrderStatusChangedOutboxEvent;
 import com.delivery.order.domain.outbox.Outbox;
 import com.delivery.order.dto.event.OrderCreatedEventDto;
 import com.delivery.order.dto.event.OrderStatusChangedEventDto;
+import com.delivery.order.dto.event.PaymentRequestedEventDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.outbox.OutboxRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,13 +48,19 @@ public class OrderOutboxService {
 
     public void saveOrderStatusChanged(OrderStatusChangedOutboxEvent event) {
         String eventId = getEventId();
-        String payload = buildOrderStatusChangedPayload(event, eventId);
+        boolean paymentRequested = event.targetStatus() == com.delivery.order.domain.order.Order.Status.PAYMENT_PENDING;
+        String eventType = paymentRequested
+            ? OrderEventType.PAYMENT_REQUESTED
+            : OrderEventType.ORDER_STATUS_CHANGED;
+        String payload = paymentRequested
+            ? buildPaymentRequestedPayload(event, eventId)
+            : buildOrderStatusChangedPayload(event, eventId);
 
         Outbox outbox = new Outbox(
             eventId,
             Outbox.AggregateType.ORDER,
             event.orderId(),
-            OrderEventType.ORDER_STATUS_CHANGED,
+            eventType,
             payload,
             Outbox.Status.INIT,
             String.valueOf(event.userId())
@@ -72,6 +79,12 @@ public class OrderOutboxService {
 
     private String buildOrderStatusChangedPayload(OrderStatusChangedOutboxEvent event, String eventId) {
         OrderStatusChangedEventDto payload = OrderStatusChangedEventDto.from(event, eventId, LocalDateTime.now());
+
+        return serializePayload(payload, event.orderId());
+    }
+
+    private String buildPaymentRequestedPayload(OrderStatusChangedOutboxEvent event, String eventId) {
+        PaymentRequestedEventDto payload = PaymentRequestedEventDto.from(event, eventId, LocalDateTime.now());
 
         return serializePayload(payload, event.orderId());
     }

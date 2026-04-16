@@ -48,4 +48,46 @@ topics = {
     replication_factor = 1
     config             = {}
   }
+
+  "outbox.event.OrderCreated" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderStatusChanged" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentRequested" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderValidated" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderRejected" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentSucceeded" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentFailed" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
 }

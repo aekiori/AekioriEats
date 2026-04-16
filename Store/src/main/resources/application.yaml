@@ -14,7 +14,7 @@ spring:
     jpa:
         hibernate:
             ddl-auto: validate
-        show-sql: true
+        show-sql: false
         database-platform: org.hibernate.dialect.MySQLDialect
 
     flyway:
@@ -35,8 +35,7 @@ spring:
 
 store:
     order-event:
-        source-topic: ${STORE_ORDER_EVENT_SOURCE_TOPIC:delivery.delivery_order.outbox}
-        smt-topic: ${STORE_ORDER_EVENT_SMT_TOPIC:outbox.event.ORDER}
+        order-created-topic: ${STORE_ORDER_EVENT_ORDER_CREATED_TOPIC:outbox.event.OrderCreated}
         order-created-consumer-group: ${STORE_ORDER_EVENT_ORDER_CREATED_CONSUMER_GROUP:store-order-created-validation}
 
 management:

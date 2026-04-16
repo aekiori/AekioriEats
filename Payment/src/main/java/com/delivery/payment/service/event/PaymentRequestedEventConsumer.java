@@ -5,6 +5,7 @@ import com.delivery.payment.dto.event.PaymentRequestedEventDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,20 +16,19 @@ import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentRequestedEventConsumer {
     private final ObjectMapper objectMapper;
     private final PaymentRequestedEventHandler paymentRequestedEventHandler;
 
     @KafkaListener(
-        topics = {
-            "${payment.order-event.source-topic:delivery.delivery_order.outbox}",
-            "${payment.order-event.smt-topic:outbox.event.ORDER}"
-        },
+        topics = "${payment.order-event.payment-requested-topic:outbox.event.PaymentRequested}",
         groupId = "${payment.order-event.payment-requested-consumer-group:payment-payment-requested}"
     )
     public void consume(ConsumerRecord<String, String> record) {
         try {
             PaymentRequestedEventDto event = extractEvent(record);
+            log.info("paymentReq come in {}", record);
             if (event == null || !OrderEventType.PAYMENT_REQUESTED.equals(event.eventType())) {
                 return;
             }
