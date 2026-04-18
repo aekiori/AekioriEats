@@ -8,13 +8,13 @@
 루트에서:
 
 ```cmd
-docker compose -f docker/compose.yml up -d prometheus grafana
+docker compose -f infra/docker/infra/compose.infra.yml up -d prometheus grafana
 ```
 
 전체 스택이면:
 
 ```cmd
-docker compose -f docker/compose.yml up -d --build
+docker compose -f infra/docker/infra/compose.infra.yml up -d --build
 ```
 
 ## 스크랩 대상
@@ -42,7 +42,7 @@ Grafana:
 - 필요하면 여기에 패널을 계속 추가해서 확장하면 된다.
 
 ## 보관 정책 (Retention)
-현재 `docker/compose.yml`에서 Prometheus TSDB 보관 정책을 아래처럼 적용했다.
+현재 `infra/docker/infra/compose.infra.yml`에서 Prometheus TSDB 보관 정책을 아래처럼 적용했다.
 
 - `--storage.tsdb.retention.time=7d`
 - `--storage.tsdb.retention.size=5GB`

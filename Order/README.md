@@ -134,8 +134,8 @@ Outbox 상태:
 루트에서 전체 스택 실행:
 
 ```cmd
-docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml up -d --build
-docker compose --env-file docker/app/.env.app -f docker/app/compose.app.yml up -d --build
+docker compose --env-file infra/docker/infra/.env.infra -f infra/docker/infra/compose.infra.yml up -d --build
+docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.app.yml up -d --build
 ```
 
 Debezium connector 등록:

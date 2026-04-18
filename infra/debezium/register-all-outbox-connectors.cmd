@@ -12,24 +12,28 @@ pushd "%ROOT%" >NUL || (
 
 set "FAILED="
 
-call :upsert_connector "order-outbox-connector" "Order\infra\debezium\order-outbox-connector-smt.json"
+call :post_connector "auth-outbox-connector" "Auth\infra\debezium\auth-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :upsert_connector "user-outbox-connector" "User\infra\debezium\user-outbox-connector-smt.json"
+call :post_connector "user-outbox-connector" "User\infra\debezium\user-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :upsert_connector "auth-outbox-connector" "Auth\infra\debezium\auth-outbox-connector-smt.json"
+call :post_connector "order-outbox-connector" "Order\infra\debezium\order-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :upsert_connector "store-outbox-connector" "Store\infra\debezium\store-outbox-connector-smt.json"
+call :post_connector "store-outbox-connector" "Store\infra\debezium\store-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :upsert_connector "payment-outbox-connector" "Payment\infra\debezium\payment-outbox-connector-smt.json"
+call :post_connector "payment-outbox-connector" "Payment\infra\debezium\payment-outbox-connector-smt.json"
+if errorlevel 1 set "FAILED=1"
+
+call :post_connector "point-outbox-connector" "Point\infra\debezium\point-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
 if defined FAILED (
     echo.
     echo [FAIL] one or more connectors failed
+    echo [HINT] POST returns 409 if a connector already exists. Delete it first or switch this script back to PUT upsert.
     popd >NUL
     exit /b 1
 )
@@ -39,7 +43,7 @@ echo [OK] all connectors are registered
 popd >NUL
 exit /b 0
 
-:upsert_connector
+:post_connector
 set "NAME=%~1"
 set "FILE=%~2"
 
@@ -48,26 +52,13 @@ if not exist "%FILE%" (
     exit /b 1
 )
 
-set "TMP_CONFIG=%TEMP%\%NAME%-config-%RANDOM%%RANDOM%.json"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$obj = Get-Content -LiteralPath '%FILE%' -Raw | ConvertFrom-Json; if ($null -eq $obj.config) { exit 2 }; $obj.config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath '%TMP_CONFIG%' -Encoding Ascii"
-if errorlevel 1 (
-    echo [FAIL] cannot build config payload from file: %FILE%
-    if exist "%TMP_CONFIG%" del /q "%TMP_CONFIG%" >NUL 2>NUL
-    exit /b 1
-)
+echo [INFO] register connector: %NAME%
+for /f %%R in ('curl -s -o NUL -w "%%{http_code}" -X POST -H "Content-Type: application/json" --data-binary "@%FILE%" "%CONNECT_URL%/connectors"') do set "POST_CODE=%%R"
 
-echo [INFO] upsert connector: %NAME%
-for /f %%R in ('curl -s -o NUL -w "%%{http_code}" -X PUT -H "Content-Type: application/json" --data-binary "@%TMP_CONFIG%" "%CONNECT_URL%/connectors/%NAME%/config"') do set "PUT_CODE=%%R"
-if exist "%TMP_CONFIG%" del /q "%TMP_CONFIG%" >NUL 2>NUL
-
-if "!PUT_CODE!"=="200" (
-    echo [OK] upserted: %NAME%
-    exit /b 0
-)
-if "!PUT_CODE!"=="201" (
-    echo [OK] upserted: %NAME%
+if "!POST_CODE!"=="201" (
+    echo [OK] registered: %NAME%
     exit /b 0
 )
 
-echo [FAIL] upsert failed. connector=%NAME% status=!PUT_CODE!
+echo [FAIL] register failed. connector=%NAME% status=!POST_CODE!
 exit /b 1

@@ -35,7 +35,7 @@ npm run dev
 
 ## Run with Docker Compose
 ```bash
-docker compose --env-file docker/app/.env.app -f docker/app/compose.app.yml up -d frontend-service
+docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.app.yml up -d frontend-service
 ```
 
 Open:

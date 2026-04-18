@@ -31,6 +31,12 @@ topics = {
     config             = {}
   }
 
+  "delivery.delivery_point.outbox" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
   "outbox.event.ORDER" = {
     partitions         = 1
     replication_factor = 1
@@ -86,6 +92,24 @@ topics = {
   }
 
   "outbox.event.PaymentFailed" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PointDeductionRequested" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PointDeducted" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PointDeductionFailed" = {
     partitions         = 1
     replication_factor = 1
     config             = {}

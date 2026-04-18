@@ -61,3 +61,5 @@ taskmgr-dumps/
 taskmgr-reg-backup-*.reg
 reset-taskmgr-settings.reg
 run-windows-repair.ps1
+windows-repair-logs/
+safevisit-*

@@ -3,14 +3,18 @@ package com.delivery.payment.service.event;
 import com.delivery.payment.constant.PaymentEventType;
 import com.delivery.payment.domain.outbox.Outbox;
 import com.delivery.payment.dto.event.PaymentResultEventDto;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
 public final class PaymentResultOutboxEvent {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .registerModule(new JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private PaymentResultOutboxEvent() {
     }

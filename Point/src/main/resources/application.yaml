@@ -1,0 +1,57 @@
+server:
+    port: ${SERVER_PORT:8087}
+
+spring:
+    application:
+        name: Point
+
+    datasource:
+        url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/delivery_point}
+        username: ${SPRING_DATASOURCE_USERNAME:root}
+        password: ${SPRING_DATASOURCE_PASSWORD:root}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        database-platform: org.hibernate.dialect.MySQLDialect
+
+    flyway:
+        enabled: true
+        table: flyway_schema_history_point
+        baseline-on-migrate: true
+        baseline-version: 0
+
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        consumer:
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+point:
+    payment-event:
+        point-deduction-requested-topic: ${POINT_PAYMENT_EVENT_DEDUCTION_REQUESTED_TOPIC:outbox.event.PointDeductionRequested}
+        point-deduction-consumer-group: ${POINT_PAYMENT_EVENT_DEDUCTION_CONSUMER_GROUP:point-deduction}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus
+    metrics:
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+        tags:
+            application: ${spring.application.name}
+
+springdoc:
+    api-docs:
+        path: /v3/api-docs
+    swagger-ui:
+        path: /swagger-ui.html

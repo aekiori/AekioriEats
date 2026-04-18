@@ -27,6 +27,10 @@ spring:
                   uri: ${GATEWAY_PAYMENT_SERVICE_URI:http://localhost:8086}
                   predicates:
                       - Path=/api/v1/payments/**
+                - id: point-service
+                  uri: ${GATEWAY_POINT_SERVICE_URI:http://localhost:8087}
+                  predicates:
+                      - Path=/api/v1/points/**
 
 gateway:
     auth:

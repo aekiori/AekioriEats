@@ -81,28 +81,21 @@
 
 ## 로컬 실행
 
-```cmd
-docker compose --env-file docker/infra/.env.infra -f docker/infra/compose.infra.yml up -d --build
-docker compose --env-file docker/app/.env.app -f docker/app/compose.app.yml up -d --build
-```
+처음 환경을 띄울 때는 아래 문서를 기준으로 진행한다.
 
-Kafka Connect가 준비된 뒤 connector 등록:
+- [로컬 시작 가이드](docs/start/README.md)
 
-```cmd
-curl -X POST -H "Content-Type: application/json" --data-binary @Order\infra\debezium\order-outbox-connector-smt.json http://localhost:8083/connectors
-```
-
-도메인별 connector 등록 예시:
+요약 명령:
 
 ```cmd
-curl -X POST -H "Content-Type: application/json" --data-binary @User\infra\debezium\user-outbox-connector-smt.json http://localhost:8083/connectors
-curl -X POST -H "Content-Type: application/json" --data-binary @Auth\infra\debezium\auth-outbox-connector-smt.json http://localhost:8083/connectors
-```
-
-connector 상태 확인:
-
-```cmd
-curl http://localhost:8083/connectors/order-outbox-connector/status
+docker compose --env-file infra/docker/infra/.env.infra -f infra/docker/infra/compose.infra.yml up -d --build
+cd infra\terraform\kafka
+terraform init
+terraform plan
+terraform apply
+cd ..\..\..
+infra\debezium\register-all-outbox-connectors.cmd
+docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.app.yml up -d --build
 ```
 
 ## DB/Debezium 커넥터 운영 메모
@@ -130,6 +123,7 @@ curl http://localhost:8083/connectors/order-outbox-connector/status
 
 ## 문서
 
+- [로컬 시작 가이드](docs/start/README.md)
 - [Kafka / Debezium 운영 정리](docs/kafka-debezium.md)
 - [Prometheus / Grafana 로컬 구성](docs/prometheus-grafana.md)
 - [도메인 대시보드 PromQL 템플릿](docs/promql-dashboard-template.md)

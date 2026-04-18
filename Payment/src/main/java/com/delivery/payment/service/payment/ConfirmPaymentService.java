@@ -9,6 +9,7 @@ import com.delivery.payment.repository.outbox.OutboxRepository;
 import com.delivery.payment.repository.payment.PaymentRepository;
 import com.delivery.payment.service.event.PaymentResultOutboxEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ConfirmPaymentService {
     private final PaymentRepository paymentRepository;
     private final OutboxRepository outboxRepository;
@@ -31,7 +33,10 @@ public class ConfirmPaymentService {
                 "Payment request is not ready for orderId=" + request.orderId()
             ));
 
+        log.info("payment confirm {}", payment);
+
         if (!request.amount().equals(payment.getAmount())) {
+            log.info("콘푸로스트");
             throw new ResponseStatusException(
                 HttpStatus.CONFLICT,
                 "Payment amount does not match order amount."
