@@ -38,8 +38,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final List<String> PUBLIC_PATHS = List.of(
         "/actuator/**",
         "/api/v1/auth/**",
-        "/api/v1/gateway/test/**"
-    ); // todo -- 지금은 ㄱㅊ은데 확장 고려하면 하드코딩 말고 외부주입?
+        "/api/v1/gateway/test/**",
+        "/api/v1/stores/**"
+    );
 
     private final SecretKey secretKey;
     private final JwtParser jwtParser;
@@ -57,15 +58,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    // todo -- 예외처리할때, 이게 만료된건지 없는건지 비정상적인건지 구별이 안된다.
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        /**
-         * ServerHttpRequest cleanRequest = exchange.getRequest().mutate()
-         *     .headers(h -> h.remove("X-User-Id"))
-         *     .build();
-         *
-         * exchange = exchange.mutate().request(cleanRequest).build();
-         */// 이거 없으면 외부에서 X-User-Id: 1 헤더 넣어서 관리자 계정 탈취 가능해요. 보안 취약점이에요.
         exchange = sanitizeIdentityHeaders(exchange);
 
         String path = exchange.getRequest().getPath().value();
@@ -171,7 +164,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicPath(String path) {
-        // todo -- 매 요청마다 루프로 패스검사. 더 좋은방법 있는지 개선 필요
         return PUBLIC_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
     }
 

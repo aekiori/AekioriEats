@@ -8,7 +8,7 @@ import com.delivery.order.dto.response.CreateOrderResultDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
-import com.delivery.order.service.OrderIdempotencyCacheService;
+import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

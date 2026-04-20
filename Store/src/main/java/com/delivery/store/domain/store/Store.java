@@ -15,7 +15,6 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -23,7 +22,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Entity
@@ -41,7 +45,6 @@ import java.util.*;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@Slf4j
 public class Store {
     public enum Status {OPEN, CLOSED, BREAK}
 
@@ -140,8 +143,9 @@ public class Store {
         LocalTime currentTime = now.toLocalTime();
 
         for (StoreHour h : hoursList) {
-            // 뭐 월요일마다 정기휴무라던가.
-            if (h.getOpenTime() == null || h.getCloseTime() == null) continue;
+            if (h.getOpenTime() == null || h.getCloseTime() == null) {
+                continue;
+            }
 
             if (h.getDayOfWeek() == today && isOpenAtTime(h, currentTime)) { // 오늘 기준
                 return true;
@@ -157,10 +161,7 @@ public class Store {
     }
 
     private boolean isOpenAtTime(StoreHour h, LocalTime now) {
-        log.info("isOpenAtTime: now={}, open={}, close={}, isLateNight={}",
-            now, h.getOpenTime(), h.getCloseTime(), isLateNight(h));
         if (isLateNight(h)) {
-            log.info("lateNight result={}", !now.isBefore(h.getOpenTime()) || now.isBefore(h.getCloseTime()));
             return !now.isBefore(h.getOpenTime()) || now.isBefore(h.getCloseTime());
         }
         return !now.isBefore(h.getOpenTime()) && now.isBefore(h.getCloseTime());

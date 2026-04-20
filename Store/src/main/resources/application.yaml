@@ -36,7 +36,9 @@ spring:
 store:
     order-event:
         order-created-topic: ${STORE_ORDER_EVENT_ORDER_CREATED_TOPIC:outbox.event.OrderCreated}
+        order-status-changed-topic: ${STORE_ORDER_EVENT_ORDER_STATUS_CHANGED_TOPIC:outbox.event.OrderStatusChanged}
         order-created-consumer-group: ${STORE_ORDER_EVENT_ORDER_CREATED_CONSUMER_GROUP:store-order-created-validation}
+        order-paid-consumer-group: ${STORE_ORDER_EVENT_ORDER_PAID_CONSUMER_GROUP:store-order-paid}
 
 management:
     endpoints:

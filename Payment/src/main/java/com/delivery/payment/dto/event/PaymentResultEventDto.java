@@ -60,4 +60,27 @@ public record PaymentResultEventDto(
             failReason
         );
     }
+
+    public static PaymentResultEventDto refunded(
+        String eventId,
+        String eventType,
+        Long orderId,
+        Long paymentId,
+        Integer finalAmount,
+        String refundReason,
+        LocalDateTime occurredAt
+    ) {
+        return new PaymentResultEventDto(
+            eventId,
+            eventType,
+            SCHEMA_VERSION,
+            occurredAt,
+            orderId,
+            paymentId,
+            "REFUNDED",
+            finalAmount,
+            null,
+            refundReason
+        );
+    }
 }

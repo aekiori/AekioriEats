@@ -64,8 +64,8 @@ cd ..\..\..
 
 자세한 내용:
 
-- [Kafka 토픽 Terraform 관리](../../infra/terraform/kafka/README.md)
-- [Kafka / Debezium 운영 정리](../kafka-debezium.md)
+- [Kafka 토픽 Terraform 관리](../infra/kafka-terraform.md)
+- [Kafka / Debezium 운영 정리](../infra/kafka-debezium.md)
 
 ## 3. Debezium connector 등록
 
@@ -186,7 +186,7 @@ infra\debezium\register-all-outbox-connectors.cmd
 ## 문서 위치 기준
 
 - 실행 순서: `docs/start/README.md`
-- Kafka 토픽 관리: `infra/terraform/kafka/README.md`
-- Kafka/Debezium 운영 메모: `docs/kafka-debezium.md`
-- 이벤트 흐름 설계: `event-design.md`
-- 관측 구성: `docs/prometheus-grafana.md`
+- Kafka 토픽 관리: `docs/infra/kafka-terraform.md`
+- Kafka/Debezium 운영 메모: `docs/infra/kafka-debezium.md`
+- 이벤트 흐름 설계: `docs/event-design.md`
+- 관측 구성: `docs/infra/prometheus-grafana.md`

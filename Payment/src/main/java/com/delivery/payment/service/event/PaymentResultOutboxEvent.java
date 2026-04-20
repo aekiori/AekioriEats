@@ -52,6 +52,23 @@ public final class PaymentResultOutboxEvent {
         );
     }
 
+    public static Outbox refunded(Long orderId, Long paymentId, Integer finalAmount, String refundReason) {
+        return create(
+            orderId,
+            paymentId,
+            PaymentEventType.PAYMENT_REFUNDED,
+            (eventId, occurredAt) -> PaymentResultEventDto.refunded(
+                eventId,
+                PaymentEventType.PAYMENT_REFUNDED,
+                orderId,
+                paymentId,
+                finalAmount,
+                refundReason,
+                occurredAt
+            )
+        );
+    }
+
     private static Outbox create(
         Long orderId,
         Long paymentId,

@@ -38,9 +38,12 @@ payment:
         verify-enabled: ${PAYMENT_PORTONE_VERIFY_ENABLED:false}
         api-base-url: ${PAYMENT_PORTONE_API_BASE_URL:https://api.portone.io}
         api-secret: ${PAYMENT_PORTONE_API_SECRET:}
+        store-id: ${PAYMENT_PORTONE_STORE_ID:}
     order-event:
         payment-requested-topic: ${PAYMENT_ORDER_EVENT_PAYMENT_REQUESTED_TOPIC:outbox.event.PaymentRequested}
         payment-requested-consumer-group: ${PAYMENT_ORDER_EVENT_PAYMENT_REQUESTED_CONSUMER_GROUP:payment-payment-requested}
+        order-status-changed-topic: ${PAYMENT_ORDER_EVENT_ORDER_STATUS_CHANGED_TOPIC:outbox.event.OrderStatusChanged}
+        refund-request-consumer-group: ${PAYMENT_ORDER_EVENT_REFUND_REQUEST_CONSUMER_GROUP:payment-refund-request}
 
 management:
     endpoints:

@@ -79,10 +79,6 @@ public class Outbox {
         this.partitionKey = partitionKey;
     }
 
-    public void markPublished() {
-        this.status = Status.PUBLISHED;
-    }
-
     @PrePersist
     void onCreate() {
         if (this.createdAt == null) {

@@ -1,4 +1,4 @@
-bootstrap_servers = ["localhost:9092"]
+bootstrap_servers = ["127.0.0.1:9092"]
 
 topics = {
   "delivery.delivery_order.outbox" = {
@@ -92,6 +92,24 @@ topics = {
   }
 
   "outbox.event.PaymentFailed" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentRefunded" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.StoreOrderAccepted" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.StoreOrderRejected" = {
     partitions         = 1
     replication_factor = 1
     config             = {}

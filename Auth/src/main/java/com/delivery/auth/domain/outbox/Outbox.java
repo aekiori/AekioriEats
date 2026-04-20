@@ -85,11 +85,4 @@ public class Outbox {
         this.partitionKey = partitionKey;
     }
 
-    public void markPublished() {
-        this.status = Status.PUBLISHED;
-    }
-
-    public void markFailed() {
-        this.status = Status.FAILED;
-    }
 }

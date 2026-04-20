@@ -54,6 +54,15 @@ order:
         order-validated-topic: ${ORDER_STORE_VALIDATION_EVENT_ORDER_VALIDATED_TOPIC:outbox.event.OrderValidated}
         order-rejected-topic: ${ORDER_STORE_VALIDATION_EVENT_ORDER_REJECTED_TOPIC:outbox.event.OrderRejected}
         consumer-group: ${ORDER_STORE_VALIDATION_EVENT_CONSUMER_GROUP:order-store-validation}
+    payment-result-event:
+        payment-succeeded-topic: ${ORDER_PAYMENT_RESULT_EVENT_PAYMENT_SUCCEEDED_TOPIC:outbox.event.PaymentSucceeded}
+        payment-failed-topic: ${ORDER_PAYMENT_RESULT_EVENT_PAYMENT_FAILED_TOPIC:outbox.event.PaymentFailed}
+        payment-refunded-topic: ${ORDER_PAYMENT_RESULT_EVENT_PAYMENT_REFUNDED_TOPIC:outbox.event.PaymentRefunded}
+        consumer-group: ${ORDER_PAYMENT_RESULT_EVENT_CONSUMER_GROUP:order-payment-result}
+    store-order-decision-event:
+        order-accepted-topic: ${ORDER_STORE_ORDER_DECISION_EVENT_ORDER_ACCEPTED_TOPIC:outbox.event.StoreOrderAccepted}
+        order-rejected-topic: ${ORDER_STORE_ORDER_DECISION_EVENT_ORDER_REJECTED_TOPIC:outbox.event.StoreOrderRejected}
+        consumer-group: ${ORDER_STORE_ORDER_DECISION_EVENT_CONSUMER_GROUP:order-store-order-decision}
     internal:
         api-key: ${ORDER_INTERNAL_API_KEY:order-internal-dev-key}
 

@@ -17,18 +17,21 @@
 
 `AekioriEats`는 단순한 기능 구현을 넘어, 도메인 모델링과 서비스 간 연결, 그리고 이를 뒷받침하는 인프라 구성까지 함께 다루기 위해 만든 프로젝트다.
 
-### 해당 프로젝트에서 다루게 될 주제들
-- **DDD**를 통한 명확한 도메인 경계 설계와 응집도 강화
+### 구현된 주제들
+- **DDD** 기반 도메인 경계 설계와 응집도 강화
 - **Kafka + Debezium** 기반 Event-Driven Architecture와 Transactional Outbox Pattern
-- **Saga Pattern**을 활용한 분산 트랜잭션 관리
+- **Saga Pattern** 기반 분산 트랜잭션 관리
 - **Idempotency(멱등성)** 보장 및 서비스 간 결합도 최소화
 - **Redis** 기반 분산락 및 캐싱 전략
 - **API Gateway** (Spring Cloud Gateway) 기반 공통 인증/인가/라우팅
 - **Bloom Filter** 기반 이메일 중복 확인 성능 최적화 PoC
-- **Distributed Tracing** (Zipkin)으로 서비스 간 요청 흐름 추적
-- **Circuit Breaker** (Resilience4j)로 서비스 간 장애 전파 방지
-- **CQRS** - 조회/명령 분리
-- **Elasticsearch** 기반 메뉴/상점 검색
+- **PortOne** 연동 결제/환불 처리 (카카오페이 테스트 결제 및 취소)
+- **CQRS** - Store 서비스 조회/명령 분리
+
+### 추후 추가 예정
+- **Distributed Tracing** (Micrometer + Zipkin)
+- **Circuit Breaker** (Resilience4j)
+- **Elasticsearch** 기반 메뉴/상점 통합 검색
 
 ### 관측(Observability) 고도화 예정
 - 지금은 시스템 메트릭(RPS/Latency/Error/JVM/GC) 중심 대시보드를 우선 운영한다.
@@ -43,25 +46,20 @@
 
 ## Domains
 
-### 우선 구현
-- `Order` - **개발 중**
-- `User`- **개발 중**
-- `Auth`- **개발 중**
-- `Payment`
-- `Point`
-- `Store`
-
-이후에는 도메인 간 연결과 운영 복잡도가 더 커지는 만큼, 공부도 더 하면서 확장 방향을 신중하게 가져갈 예정이다.
-
-다만 그 시점에는 AI가 상당 부분을 대신하고 있을지도 모르겠다.
+### 구현 완료
+- [`Auth`](Auth/README.md) - JWT 인증, 리프레시 토큰 로테이션, Rate Limit
+- [`User`](User/README.md) - 사용자 프로필 Projection, 이벤트 Dedup 처리
+- [`Order`](Order/README.md) - 주문 생성/상태 관리, Redis 멱등성, Outbox
+- [`Store`](Store/README.md) - 상점/메뉴 관리, 주문 검증 이벤트 컨슈머
+- [`Gateway`](Gateway/README.md) - JWT 검증, 라우팅, 헤더 인젝션/위조 방지
+- [`Payment`](Payment/README.md) - 결제 대기 생성, PortOne 연동 결제 확정/환불
+- [`Point`](Point/README.md) - 포인트 잔액/원장, 차감 이벤트 처리
 
 ### 추후 확장 예정
 - `Promotion / Coupon`
 - `Rider Delivery`
 - `Notification`
-- `Inventory`
 - `Review`
-- `...`
 
 
 
@@ -123,11 +121,21 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 
 ## 문서
 
+### 시작 / 운영
 - [로컬 시작 가이드](docs/start/README.md)
-- [Kafka / Debezium 운영 정리](docs/kafka-debezium.md)
-- [Prometheus / Grafana 로컬 구성](docs/prometheus-grafana.md)
-- [도메인 대시보드 PromQL 템플릿](docs/promql-dashboard-template.md)
-- [Order 서비스 문서](Order/README.md)
+- [Kafka / Debezium 운영 정리](docs/infra/kafka-debezium.md)
+- [Kafka 토픽 Terraform 관리](docs/infra/kafka-terraform.md)
+- [Prometheus / Grafana 로컬 구성](docs/infra/prometheus-grafana.md)
+- [도메인 대시보드 PromQL 템플릿](docs/infra/promql-dashboard-template.md)
+
+### 설계
+- [이벤트 설계 (Saga 흐름)](docs/event-design.md)
+- [Outbox 설계 메모](docs/outbox-design-note.md)
+- [멱등성 처리 설계](docs/Idempotency.md)
+- [Store 도메인 설계](Store/store-domain-design.md)
+
+### 서비스
+- [Auth](Auth/README.md) · [User](User/README.md) · [Order](Order/README.md) · [Store](Store/README.md) · [Gateway](Gateway/README.md) · [Payment](Payment/README.md) · [Point](Point/README.md)
 
 ## Kafka Message Format
 
@@ -140,6 +148,9 @@ Outbox 이벤트는 Debezium EventRouter SMT를 통해 Kafka로 발행된다.
 - `outbox.event.PaymentRequested`
 - `outbox.event.PaymentSucceeded`
 - `outbox.event.PaymentFailed`
+- `outbox.event.PaymentRefunded`
+- `outbox.event.StoreOrderAccepted`
+- `outbox.event.StoreOrderRejected`
 
 메시지 구조 예시:
 

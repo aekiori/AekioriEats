@@ -39,17 +39,29 @@ flowchart LR
 
 ## 주문 상태
 
-- `PENDING`
-- `PAID`
-- `FAILED`
-- `CANCELLED`
+- `PENDING` - 주문 생성 직후
+- `PAYMENT_PENDING` - 가게 검증 통과 후 결제 대기
+- `PAID` - 결제 완료
+- `ACCEPTED` - 사장 최종 수락
+- `REFUND_PENDING` - 결제 후 사장 거절로 환불 대기
+- `REFUNDED` - 환불 완료
+- `FAILED` - 결제 실패
+- `CANCELLED` - 취소
 
 허용되는 전이:
 
+- `PENDING -> PAYMENT_PENDING`
 - `PENDING -> PAID`
 - `PENDING -> FAILED`
 - `PENDING -> CANCELLED`
+- `PAYMENT_PENDING -> PAID`
+- `PAYMENT_PENDING -> FAILED`
+- `PAYMENT_PENDING -> CANCELLED`
+- `PAID -> ACCEPTED`
+- `PAID -> REFUND_PENDING`
 - `PAID -> CANCELLED`
+- `REFUND_PENDING -> REFUNDED`
+- `REFUND_PENDING -> CANCELLED`
 
 ## 멱등성
 
@@ -63,12 +75,14 @@ flowchart LR
 - HTTP 표준도 헤더에 넣는 방식을 권장
 
 Idempotency-Key 정규화 처리
+
+```java
 private String normalizeIdempotencyKey(String idempotencyKey) {
-return idempotencyKey.trim();
+    return idempotencyKey.trim();
 }
-* `@NotBlank` 검증을 통과하더라도 " Aekiori " 와 같이 값 끝에 공백이 포함된 경우에 대한
-* 완전한, 안전한 valiation 은 해주지 못한다.
-* DB 유니크 제약 조건 및 멱등성 비교 로직에서 예외가 발생하거나 중복 처리될 위험이 있다.
+```
+
+`@NotBlank` 검증을 통과하더라도 `" Aekiori "` 처럼 공백이 포함된 경우 DB 유니크 제약 조건 및 멱등성 비교 로직에서 의도치 않은 중복 처리가 발생할 수 있다. 따라서 수신 즉시 `trim()` 정규화한다.
 
 주문 생성 API는 `idempotencyKey`를 **필수** 로 받는다.
 
@@ -101,10 +115,14 @@ Redis는 아래 키를 사용한다.
 
 주요 토픽:
 
-- `delivery.delivery.outbox`
 - `outbox.event.OrderCreated`
 - `outbox.event.OrderStatusChanged`
 - `outbox.event.PaymentRequested`
+- `outbox.event.PaymentSucceeded`
+- `outbox.event.PaymentFailed`
+- `outbox.event.PaymentRefunded`
+- `outbox.event.StoreOrderAccepted`
+- `outbox.event.StoreOrderRejected`
 
 Outbox 상태:
 

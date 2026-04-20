@@ -34,10 +34,11 @@ public class Payment {
     public enum Status {
         PENDING,
         SUCCESS,
-        FAILED;
+        FAILED,
+        REFUNDED;
 
         public boolean isTerminal() {
-            return this == SUCCESS || this == FAILED;
+            return this == FAILED || this == REFUNDED;
         }
     }
 
@@ -111,6 +112,15 @@ public class Payment {
         }
         requireTransition(Status.FAILED, EnumSet.of(Status.PENDING));
         this.status = Status.FAILED;
+        this.failedReason = reason;
+    }
+
+    public void refund(String reason) {
+        if (this.status == Status.REFUNDED) {
+            return;
+        }
+        requireTransition(Status.REFUNDED, EnumSet.of(Status.SUCCESS));
+        this.status = Status.REFUNDED;
         this.failedReason = reason;
     }
 

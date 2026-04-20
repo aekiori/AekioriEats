@@ -34,6 +34,9 @@ public class PortOnePaymentClient {
     @Value("${payment.portone.verify-enabled:false}")
     private boolean verifyEnabled;
 
+    @Value("${payment.portone.store-id:}")
+    private String storeId;
+
     public boolean isVerifyEnabled() {
         return verifyEnabled;
     }
@@ -46,12 +49,7 @@ public class PortOnePaymentClient {
             );
         }
 
-        if (apiSecret == null || apiSecret.isBlank()) {
-            throw new ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "PortOne API secret is required when verification is enabled."
-            );
-        }
+        requireApiSecret();
 
         String encodedPaymentId = URLEncoder.encode(paymentId, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
@@ -84,6 +82,94 @@ public class PortOnePaymentClient {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "PortOne payment lookup interrupted.", exception);
         }
+    }
+
+    public PortOnePaymentCancellation cancelPayment(String paymentId, Integer amount, String reason) {
+        if (!verifyEnabled) {
+            return new PortOnePaymentCancellation(paymentId, null, "MOCK_CANCELLED", amount);
+        }
+
+        requireApiSecret();
+        if (paymentId == null || paymentId.isBlank()) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "PortOne paymentId is required to cancel payment."
+            );
+        }
+
+        String encodedPaymentId = URLEncoder.encode(paymentId, StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(trimTrailingSlash(apiBaseUrl) + "/payments/" + encodedPaymentId + "/cancel"))
+            .timeout(Duration.ofSeconds(5))
+            .header("Accept", "application/json")
+            .header("Content-Type", "application/json")
+            .header("Authorization", "PortOne " + apiSecret)
+            .POST(HttpRequest.BodyPublishers.ofString(buildCancelRequestBody(amount, reason)))
+            .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "PortOne payment cancel failed. status=" + response.statusCode()
+                );
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode cancellation = root.path("cancellation");
+            if (cancellation.isMissingNode() || cancellation.isNull()) {
+                cancellation = root;
+            }
+
+            return new PortOnePaymentCancellation(
+                paymentId,
+                textValue(cancellation, "id", null),
+                textValue(cancellation, "status", null),
+                amountValue(cancellation)
+            );
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "PortOne payment cancel failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "PortOne payment cancel interrupted.", exception);
+        }
+    }
+
+    private void requireApiSecret() {
+        if (apiSecret == null || apiSecret.isBlank()) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "PortOne API secret is required when verification is enabled."
+            );
+        }
+    }
+
+    private String buildCancelRequestBody(Integer amount, String reason) {
+        try {
+            JsonNode root = objectMapper.createObjectNode();
+            if (root instanceof com.fasterxml.jackson.databind.node.ObjectNode objectNode) {
+                objectNode.put("amount", amount);
+                objectNode.put("reason", normalizeReason(reason));
+                objectNode.put("requester", "ADMIN");
+
+                if (storeId != null && !storeId.isBlank()) {
+                    objectNode.put("storeId", storeId);
+                }
+            }
+
+            return objectMapper.writeValueAsString(root);
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "PortOne cancel body serialization failed.", exception);
+        }
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return "Store rejected order.";
+        }
+
+        return reason;
     }
 
     private String textValue(JsonNode node, String fieldName, String defaultValue) {

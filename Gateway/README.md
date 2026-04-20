@@ -13,11 +13,17 @@
 - Auth: `http://localhost:8084`
 - User: `http://localhost:8082`
 - Order: `http://localhost:8081`
+- Store: `http://localhost:8085`
+- Payment: `http://localhost:8086`
+- Point: `http://localhost:8087`
 
 환경변수로 변경 가능:
 - `GATEWAY_AUTH_SERVICE_URI`
 - `GATEWAY_USER_SERVICE_URI`
 - `GATEWAY_ORDER_SERVICE_URI`
+- `GATEWAY_STORE_SERVICE_URI`
+- `GATEWAY_PAYMENT_SERVICE_URI`
+- `GATEWAY_POINT_SERVICE_URI`
 
 ## 실행
 ```cmd

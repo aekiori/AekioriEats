@@ -5,6 +5,7 @@ import com.delivery.order.dto.request.CreateOrderItemDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
+import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import com.delivery.order.service.order.CreateOrderService;
 import com.delivery.order.service.order.OrderAuthorizationService;
 import org.junit.jupiter.api.BeforeEach;

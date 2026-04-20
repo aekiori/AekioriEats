@@ -89,10 +89,6 @@ public class Outbox {
         this.status = status;
     }
 
-    public void markPublished() {
-        this.status = Status.PUBLISHED;
-    }
-
     public void markFailed() {
         this.status = Status.FAILED;
     }

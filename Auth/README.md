@@ -1,6 +1,6 @@
 # Auth 서비스
 
-토큰 기반 인증을 담당하는 도메인 서비스입니다.
+토큰 기반 인증을 담당하는 도메인 서비스다.
 
 ## 주요 기능
 - 로그인 (`이메일 + 비밀번호`)
@@ -12,7 +12,28 @@
 
 ## API
 
-### 1) 로그인
+### 1) 회원가입
+`POST /api/v1/auth/signup`
+
+요청 예시:
+```json
+{
+  "email": "user@example.com",
+  "password": "password1234",
+  "nickname": "애기오리"
+}
+```
+
+응답 예시:
+```json
+{
+  "userId": 1,
+  "email": "user@example.com",
+  "nickname": "애기오리"
+}
+```
+
+### 2) 로그인
 `POST /api/v1/auth/login`
 
 요청 예시:
@@ -33,7 +54,7 @@
 }
 ```
 
-### 2) 토큰 재발급
+### 3) 토큰 재발급
 `POST /api/v1/auth/refresh`
 
 요청 예시:
@@ -43,7 +64,7 @@
 }
 ```
 
-### 3) 로그아웃
+### 4) 로그아웃
 `POST /api/v1/auth/logout`
 
 요청 예시:
@@ -76,7 +97,7 @@
 | 직접 DB 조회 | Auth가 User DB를 직접 조회/JOIN | 사용 금지 | ★☆☆☆☆ (최악) 🤯 |
 
 - 도메인 분리 원칙상 `Auth -> User DB` 직접 접근은 지양한다.
-- 현재 로그인 조회 원본은 `delivery_auth.auth_users` 이다.
+- 현재 로그인 조회 원본은 `delivery_auth.auth_users`다.
 
 
 ## 설정

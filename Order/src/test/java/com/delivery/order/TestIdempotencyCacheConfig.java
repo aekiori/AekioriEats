@@ -1,7 +1,7 @@
 package com.delivery.order;
 
 import com.delivery.order.dto.response.CreateOrderResultDto;
-import com.delivery.order.service.OrderIdempotencyCacheService;
+import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 

@@ -4,15 +4,20 @@ import com.delivery.store.auth.AuthenticatedUser;
 import com.delivery.store.auth.AuthenticatedUserInfo;
 import com.delivery.store.dto.request.UpdateStoreStatusDto;
 import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
+import com.delivery.store.dto.request.owner.DecideStoreOrderRequest;
 import com.delivery.store.dto.request.owner.DeliveryPolicyRequest;
 import com.delivery.store.dto.request.owner.ReplaceStoreHolidaysRequest;
 import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequest;
 import com.delivery.store.dto.request.owner.UpdateOwnerStoreRequest;
 import com.delivery.store.dto.response.CreateStoreResultDto;
 import com.delivery.store.dto.response.OwnerStoreSummaryResultDto;
+import com.delivery.store.dto.response.StoreOrderDecisionResultDto;
+import com.delivery.store.dto.response.StoreOrderResultDto;
 import com.delivery.store.dto.response.StoreDetailResultDto;
+import com.delivery.store.domain.store.StoreOrder;
 import com.delivery.store.service.store.StoreScheduleService;
 import com.delivery.store.service.store.StoreService;
+import com.delivery.store.service.store.StoreOrderDecisionService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -28,6 +33,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -40,6 +46,7 @@ import java.util.List;
 public class OwnerStoreController {
     private final StoreService storeService;
     private final StoreScheduleService storeScheduleService;
+    private final StoreOrderDecisionService storeOrderDecisionService;
 
     @GetMapping
     public ResponseEntity<List<OwnerStoreSummaryResultDto>> getOwnerStores(
@@ -158,6 +165,42 @@ public class OwnerStoreController {
         return ResponseEntity.ok(
             storeScheduleService.replaceStoreHolidays(
                 storeId,
+                request,
+                authenticatedUser.userId(),
+                authenticatedUser.userRole()
+            )
+        );
+    }
+
+    @GetMapping("/{storeId}/orders")
+    public ResponseEntity<List<StoreOrderResultDto>> getStoreOrders(
+        @PathVariable Long storeId,
+        @RequestParam(defaultValue = "PENDING") StoreOrder.Status status,
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
+    ) {
+        return ResponseEntity.ok(
+            storeOrderDecisionService.getStoreOrders(
+                storeId,
+                status,
+                authenticatedUser.userId(),
+                authenticatedUser.userRole()
+            )
+        );
+    }
+
+    @PostMapping("/{storeId}/orders/{orderId}/decision")
+    public ResponseEntity<StoreOrderDecisionResultDto> decideStoreOrder(
+        @PathVariable Long storeId,
+        @PathVariable Long orderId,
+        @Valid @RequestBody DecideStoreOrderRequest request,
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
+    ) {
+        return ResponseEntity.ok(
+            storeOrderDecisionService.decide(
+                storeId,
+                orderId,
                 request,
                 authenticatedUser.userId(),
                 authenticatedUser.userRole()

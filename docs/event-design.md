@@ -70,39 +70,62 @@ PG 결제 진행 또는 결제 confirm 처리
 
 [11] order-service consume StoreOrderRejected
 주문 상태 = REFUND_PENDING
+-> order outbox: OrderStatusChanged(targetStatus=REFUND_PENDING)
 
-[12] payment-service consume StoreOrderRejected
-환불 처리
+[12] payment-service consume OrderStatusChanged(targetStatus=REFUND_PENDING)
+포트원 결제 취소 API 호출
+-> 성공 시 payment.status = REFUNDED
 -> PaymentRefunded
 -> 포인트 사용분이 있으면 PointRefundRequested
 
 [13] order-service consume PaymentRefunded
 주문 상태 = REFUNDED
--> order outbox: OrderRefunded
+-> order outbox: OrderStatusChanged(targetStatus=REFUNDED)
 ```
 
 ## 현재 구현된 주요 구간
 
 ```text
-OrderCreated
--> Store consume
--> OrderValidated / OrderRejected
--> Order consume
--> PAYMENT_PENDING
--> PaymentRequested
--> Payment consume
-```
+[1] OrderCreated
+-> store-service consume
+-> 가게 검증 (존재/영업상태/최소주문금액)
+-> OrderValidated 또는 OrderRejected
 
-추가로 Point 서비스 MVP가 붙어 있다.
+[2] OrderValidated
+-> order-service consume
+-> 주문 상태 = PAYMENT_PENDING
+-> PaymentRequested outbox 저장
 
-```text
-PaymentRequested.usedPointAmount > 0
--> payment-service saves PointDeductionRequested outbox
--> outbox.event.PointDeductionRequested
+[3] PaymentRequested
+-> payment-service consume
+-> payment row 생성 (status=PENDING)
+-> 포인트 사용액 > 0이면 PointDeductionRequested outbox 저장
+
+[4] PointDeductionRequested
 -> point-service consume
--> point_balance 차감
--> point_ledger 기록
--> outbox.event.PointDeducted 또는 outbox.event.PointDeductionFailed
+-> point_balance 차감 + point_ledger 기록
+-> PointDeducted 또는 PointDeductionFailed
+
+[5] 클라이언트 PortOne 결제 완료
+-> POST /api/v1/payments/confirm
+-> payment-service가 PortOne 검증 (verifyEnabled=true 시)
+-> payment.status = SUCCESS
+-> PaymentSucceeded outbox 저장
+
+[6] StoreOrderRejected
+-> order-service consume
+-> 주문 상태 = REFUND_PENDING
+-> OrderStatusChanged(targetStatus=REFUND_PENDING) outbox 저장
+
+[7] OrderStatusChanged(targetStatus=REFUND_PENDING)
+-> payment-service consume
+-> PortOne 결제 취소 API 호출
+-> payment.status = REFUNDED
+-> PaymentRefunded outbox 저장
+
+[8] PaymentRefunded
+-> order-service consume
+-> 주문 상태 = REFUNDED
 ```
 
 ## 이벤트 타입과 토픽
@@ -128,6 +151,9 @@ outbox.event.OrderStatusChanged
 outbox.event.PaymentRequested
 outbox.event.PaymentSucceeded
 outbox.event.PaymentFailed
+outbox.event.PaymentRefunded
+outbox.event.StoreOrderAccepted
+outbox.event.StoreOrderRejected
 outbox.event.PointDeductionRequested
 outbox.event.PointDeducted
 outbox.event.PointDeductionFailed
@@ -151,18 +177,22 @@ outbox.event.PAYMENT
 - `OrderValidated`를 받으면 주문 상태를 `PAYMENT_PENDING`으로 변경하고 `PaymentRequested`를 발행한다.
 - `OrderRejected`를 받으면 주문을 거절 상태로 전환한다.
 - 이후 `PaymentSucceeded`, `PaymentFailed`, `PaymentRefunded` 등을 consume해서 주문 상태를 갱신한다.
+- `StoreOrderRejected`를 받으면 `REFUND_PENDING`으로 바꾸고, 환불 완료 이벤트를 받으면 `REFUNDED`로 마감한다.
 
 ### Store Service
 - `OrderCreated`를 consume해서 가게 1차 검증을 수행한다.
 - 검증 결과를 `store_order_validation`에 저장한다.
 - 성공 시 `OrderValidated`, 실패 시 `OrderRejected`를 발행한다.
-- 결제 이후 최종 수락/거절 단계에서는 `OrderPaid`를 consume해서 `StoreOrderAccepted` 또는 `StoreOrderRejected`를 발행할 예정이다.
+- 결제 이후 최종 수락/거절 단계에서는 `OrderStatusChanged(targetStatus=PAID)`를 consume해서 사장 수락/거절 대기 데이터를 만든다.
+- 사장 수락/거절 API 결과에 따라 `StoreOrderAccepted` 또는 `StoreOrderRejected`를 발행한다.
 
 ### Payment Service
 - `PaymentRequested`를 consume해서 결제 대기 데이터를 생성한다.
 - 포인트 사용 금액이 있으면 `PointDeductionRequested`를 발행한다.
 - 클라이언트가 `/api/v1/payments/confirm`을 호출하면 포트원 결제 결과를 검증하고 `PaymentSucceeded`를 발행한다.
 - 실패 시 `PaymentFailed`를 발행한다.
+- 주문이 `REFUND_PENDING`으로 바뀐 `OrderStatusChanged` 이벤트를 consume해서 포트원 결제 취소 API를 호출한다.
+- 포트원 결제 취소가 성공한 뒤에만 `payment.status=REFUNDED`로 바꾸고 `PaymentRefunded`를 발행한다.
 - 추후 포인트 차감 성공/실패 이벤트를 consume해서 PG 결제 흐름을 이어가도록 확장한다.
 
 ### Point Service
@@ -257,13 +287,11 @@ RELEASE
 
 ## 남은 작업
 
-우선순위 높은 것:
-- `payment-service`가 `PointDeducted`를 consume해서 PG 결제를 이어가도록 구현
-- `payment-service`가 `PointDeductionFailed`를 consume해서 `PaymentFailed`를 발행하도록 구현
-- `order-service`가 `PaymentSucceeded`/`PaymentFailed`를 consume해서 주문 상태를 갱신하도록 구현
+우선순위 높음:
+- `payment-service`가 `PointDeducted`를 consume → PG 결제 이어가기
+- `payment-service`가 `PointDeductionFailed`를 consume → `PaymentFailed` 발행
+- 포인트 사용 주문의 환불 이벤트 연계 (`PointRefundRequested`)
 
 이후 확장:
-- `OrderPaid` 이후 Store 최종 수락/거절 플로우 구현
-- 환불 플로우 구현
-- 포인트 환불 이벤트 구현
-- DLQ/재처리 운영 API 정리
+- Saga timeout 처리 (결제 응답 없을 때 Order 자동 FAILED 전환)
+- DLQ 컨슈머 및 재처리 운영 API 정리

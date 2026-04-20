@@ -91,6 +91,26 @@ export type OwnerStoreSummaryResponse = {
   createdAt: string;
 };
 
+export type StoreOrderResponse = {
+  orderId: number;
+  storeId: number;
+  userId: number | null;
+  finalAmount: number | null;
+  status: string;
+  rejectReason: string | null;
+  paidAt: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+};
+
+export type StoreOrderDecisionResponse = {
+  orderId: number;
+  storeId: number;
+  status: string;
+  rejectReason: string | null;
+  decidedAt: string | null;
+};
+
 export type CreateMenuGroupRequest = {
   name: string;
   displayOrder: number;
