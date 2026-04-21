@@ -151,7 +151,7 @@ public class PortOnePaymentClient {
             if (root instanceof com.fasterxml.jackson.databind.node.ObjectNode objectNode) {
                 objectNode.put("amount", amount);
                 objectNode.put("reason", normalizeReason(reason));
-                objectNode.put("requester", "ADMIN");
+                objectNode.put("requester", "SYSTEM");
 
                 if (storeId != null && !storeId.isBlank()) {
                     objectNode.put("storeId", storeId);

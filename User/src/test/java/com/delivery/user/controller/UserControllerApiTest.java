@@ -24,8 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class UserControllerApiTest {
     private static final String USER_ID_HEADER = "X-User-Id";
-    private static final String USER_ROLE_HEADER = "X-User-Role";
-
     @Autowired
     private WebApplicationContext webApplicationContext;
 
@@ -84,20 +82,4 @@ class UserControllerApiTest {
             .andExpect(jsonPath("$.code").value("FORBIDDEN_RESOURCE_ACCESS"));
     }
 
-    @Test
-    void update_user_status_api_returns_200_for_admin_role() throws Exception {
-        CreateUserResultDto createdUser = userService.createUser(new CreateUserDto("owner5@example.com"));
-
-        mockMvc.perform(patch("/api/v1/users/{userId}/status", createdUser.userId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(USER_ID_HEADER, "9999")
-                .header(USER_ROLE_HEADER, "ADMIN")
-                .content("""
-                    {
-                      "status": "LOCKED"
-                    }
-                    """))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("LOCKED"));
-    }
 }

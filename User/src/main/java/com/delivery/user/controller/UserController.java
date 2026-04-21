@@ -37,12 +37,10 @@ public class UserController {
     public ResponseEntity<UserDetailResultDto> getUser(
         @PathVariable Long userId,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     ) {
         long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(userService.getUser(userId, authenticatedUserId, authenticatedUserRole));
+        return ResponseEntity.ok(userService.getUser(userId, authenticatedUserId));
     }
 
     @PatchMapping("/{userId}/status")
@@ -50,11 +48,9 @@ public class UserController {
         @PathVariable Long userId,
         @Valid @RequestBody UpdateUserStatusDto request,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     ) {
         long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(userService.updateUserStatus(userId, request, authenticatedUserId, authenticatedUserRole));
+        return ResponseEntity.ok(userService.updateUserStatus(userId, request, authenticatedUserId));
     }
 }

@@ -6,7 +6,7 @@
 - 상점 생성
 - 상점 상세 조회
 - 상점 상태 변경 (`OPEN`, `CLOSED`, `BREAK`)
-- `X-User-Id`, `X-User-Role` 기반 owner/admin 인가
+- `X-User-Id` 기준 owner 본인만 수정 권한을 가진다
 - `OrderCreated` 이벤트 소비 후 가게 주문 검증 결과 저장
 
 `delivery_tip`은 지금 고정 금액으로만 동작함. 거리별 차등 배달비는 아직 미구현 상태임.

@@ -5,7 +5,6 @@ import com.delivery.store.domain.menu.Menu;
 import com.delivery.store.domain.option.MenuOptionGroup;
 import com.delivery.store.domain.store.Store;
 import com.delivery.store.domain.store.StoreCategory;
-import com.delivery.store.dto.request.CreateStoreDto;
 import com.delivery.store.dto.request.UpdateStoreStatusDto;
 import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
 import com.delivery.store.dto.request.owner.DeliveryPolicyRequest;
@@ -49,28 +48,6 @@ public class StoreService {
     private final MenuOptionRepository menuOptionRepository;
 
     @Transactional
-    public CreateStoreResultDto createStore(
-        CreateStoreDto request,
-        long authenticatedUserId,
-        String authenticatedUserRole
-    ) {
-        storeAuthorizationService.requireSelfOrAdmin(
-            authenticatedUserId,
-            request.ownerUserId(),
-            authenticatedUserRole
-        );
-
-        Store savedStore;
-        try {
-            savedStore = storeRepository.save(Store.create(request.ownerUserId(), request.name().trim()));
-        } catch (DataIntegrityViolationException exception) {
-            throw storeNameConflict();
-        }
-
-        return CreateStoreResultDto.from(savedStore);
-    }
-
-    @Transactional
     public CreateStoreResultDto createOwnerStore(
         CreateOwnerStoreRequest request,
         long authenticatedUserId
@@ -99,13 +76,9 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
-    public StoreDetailResultDto getStore(Long storeId, long authenticatedUserId, String authenticatedUserRole) {
+    public StoreDetailResultDto getStore(Long storeId, long authenticatedUserId) {
         Store store = storeDomainSupport.findStore(storeId);
-        storeAuthorizationService.requireStoreOwnerOrAdmin(
-            authenticatedUserId,
-            store.getOwnerUserId(),
-            authenticatedUserRole
-        );
+        storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
         return StoreDetailResultDto.from(store);
     }
 
@@ -121,10 +94,9 @@ public class StoreService {
     public StoreDetailResultDto updateStoreStatus(
         Long storeId,
         UpdateStoreStatusDto request,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
+        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         store.updateStatus(request.status());
         return StoreDetailResultDto.from(storeRepository.save(store));
     }
@@ -133,10 +105,9 @@ public class StoreService {
     public StoreDetailResultDto replaceDeliveryPolicy(
         Long storeId,
         DeliveryPolicyRequest request,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
+        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         store.updateDeliveryPolicy(request.minOrderAmount(), request.deliveryTip());
         return StoreDetailResultDto.from(storeRepository.save(store));
     }
@@ -145,10 +116,9 @@ public class StoreService {
     public StoreDetailResultDto updateOwnerStore(
         Long storeId,
         UpdateOwnerStoreRequest request,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
+        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         store.updateName(request.name().trim());
 
         if (request.deliveryPolicy() != null) {
@@ -174,8 +144,8 @@ public class StoreService {
     }
 
     @Transactional
-    public void deleteOwnerStore(Long storeId, long authenticatedUserId, String authenticatedUserRole) {
-        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
+    public void deleteOwnerStore(Long storeId, long authenticatedUserId) {
+        Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         deleteStoreChildren(store.getId());
         storeRepository.delete(store);
     }

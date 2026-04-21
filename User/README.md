@@ -44,8 +44,8 @@
 
 ## 인가 정책 (P0)
 - 인증 주체는 Gateway 주입 헤더(`X-User-Id`, `X-User-Role`) 기준으로만 판단한다.
-- `GET /api/v1/users/{userId}`: 본인만 조회 가능. (`ADMIN` 예외)
-- `PATCH /api/v1/users/{userId}/status`: 본인만 변경 가능. (`ADMIN` 예외)
+- `GET /api/v1/users/{userId}`: 본인만 조회 가능.
+- `PATCH /api/v1/users/{userId}/status`: 본인만 변경 가능.
 - 소유권 위반은 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
 - 인증 주체 헤더 누락/비정상은 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
 

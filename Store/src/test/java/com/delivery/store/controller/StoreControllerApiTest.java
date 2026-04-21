@@ -1,6 +1,6 @@
 package com.delivery.store.controller;
 
-import com.delivery.store.dto.request.CreateStoreDto;
+import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
 import com.delivery.store.service.store.StoreService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,8 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class StoreControllerApiTest {
     private static final String USER_ID_HEADER = "X-User-Id";
-    private static final String USER_ROLE_HEADER = "X-User-Role";
-
     @Autowired
     private WebApplicationContext webApplicationContext;
 
@@ -42,10 +39,9 @@ class StoreControllerApiTest {
     @Test
     void get_store_api_returns_200_for_owner() throws Exception {
         long ownerUserId = 101L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store"),
-                ownerUserId,
-                "USER"
+        long storeId = storeService.createOwnerStore(
+                new CreateOwnerStoreRequest("Owner Store", null, null, null),
+                ownerUserId
             )
             .storeId();
 
@@ -58,10 +54,9 @@ class StoreControllerApiTest {
     @Test
     void get_store_api_returns_403_when_request_user_is_not_owner() throws Exception {
         long ownerUserId = 201L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store 2"),
-                ownerUserId,
-                "USER"
+        long storeId = storeService.createOwnerStore(
+                new CreateOwnerStoreRequest("Owner Store 2", null, null, null),
+                ownerUserId
             )
             .storeId();
 
@@ -74,10 +69,9 @@ class StoreControllerApiTest {
     @Test
     void get_store_api_returns_401_when_principal_header_is_missing() throws Exception {
         long ownerUserId = 301L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store 3"),
-                ownerUserId,
-                "USER"
+        long storeId = storeService.createOwnerStore(
+                new CreateOwnerStoreRequest("Owner Store 3", null, null, null),
+                ownerUserId
             )
             .storeId();
 
@@ -87,35 +81,11 @@ class StoreControllerApiTest {
     }
 
     @Test
-    void update_store_status_api_returns_200_for_admin_role() throws Exception {
-        long ownerUserId = 401L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store 4"),
-                ownerUserId,
-                "USER"
-            )
-            .storeId();
-
-        mockMvc.perform(patch("/api/v1/owner/stores/{storeId}/status", storeId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(USER_ID_HEADER, "9999")
-                .header(USER_ROLE_HEADER, "ADMIN")
-                .content("""
-                    {
-                      "status": "CLOSED"
-                    }
-                    """))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("CLOSED"));
-    }
-
-    @Test
     void replace_store_hours_api_accepts_day_of_week_7() throws Exception {
         long ownerUserId = 501L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store 5"),
-                ownerUserId,
-                "USER"
+        long storeId = storeService.createOwnerStore(
+                new CreateOwnerStoreRequest("Owner Store 5", null, null, null),
+                ownerUserId
             )
             .storeId();
 
@@ -139,10 +109,9 @@ class StoreControllerApiTest {
     @Test
     void replace_store_hours_api_rejects_day_of_week_0() throws Exception {
         long ownerUserId = 601L;
-        long storeId = storeService.createStore(
-                new CreateStoreDto(ownerUserId, "Owner Store 6"),
-                ownerUserId,
-                "USER"
+        long storeId = storeService.createOwnerStore(
+                new CreateOwnerStoreRequest("Owner Store 6", null, null, null),
+                ownerUserId
             )
             .storeId();
 

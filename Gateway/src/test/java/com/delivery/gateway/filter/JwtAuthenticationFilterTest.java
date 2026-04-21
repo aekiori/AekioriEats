@@ -43,7 +43,7 @@ class JwtAuthenticationFilterTest {
             MockServerHttpRequest.get("/api/v1/orders/1")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .header("X-User-Id", "999")
-                .header("X-User-Role", "ADMIN")
+                .header("X-User-Role", "FORGED")
                 .build()
         );
         CapturingChain chain = new CapturingChain();

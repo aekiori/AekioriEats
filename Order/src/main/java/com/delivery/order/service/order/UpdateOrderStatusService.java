@@ -27,25 +27,20 @@ public class UpdateOrderStatusService {
     public UpdateOrderStatusResultDto updateOrderStatus(
         Long orderId,
         UpdateOrderStatusDto updateOrderStatusDto,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        orderAuthorizationService.requireAdmin(authenticatedUserRole);
         Order order = orderReader.findOrder(orderId);
+        orderAuthorizationService.requireSelf(authenticatedUserId, order.getUserId());
         return updateOrderStatus(order, updateOrderStatusDto);
     }
 
     @Transactional
     public UpdateOrderStatusResultDto cancelOrder(
         Long orderId,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
         Order order = orderReader.findOrder(orderId);
-        orderAuthorizationService.requireSelfOrAdmin(
-            authenticatedUserId,
-            order.getUserId(),
-            authenticatedUserRole
-        );
+        orderAuthorizationService.requireSelf(authenticatedUserId, order.getUserId());
 
         return updateOrderStatus(order, new UpdateOrderStatusDto(Order.Status.CANCELLED, null));
     }

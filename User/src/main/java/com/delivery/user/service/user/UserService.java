@@ -45,8 +45,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserDetailResultDto getUser(Long userId, long authenticatedUserId, String authenticatedUserRole) {
-        userAuthorizationService.requireSelfOrAdmin(authenticatedUserId, userId, authenticatedUserRole);
+    public UserDetailResultDto getUser(Long userId, long authenticatedUserId) {
+        userAuthorizationService.requireSelf(authenticatedUserId, userId);
         return getUser(userId);
     }
 
@@ -62,10 +62,9 @@ public class UserService {
     public UserDetailResultDto updateUserStatus(
         Long userId,
         UpdateUserStatusDto request,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        userAuthorizationService.requireSelfOrAdmin(authenticatedUserId, userId, authenticatedUserRole);
+        userAuthorizationService.requireSelf(authenticatedUserId, userId);
         return updateUserStatus(userId, request);
     }
 

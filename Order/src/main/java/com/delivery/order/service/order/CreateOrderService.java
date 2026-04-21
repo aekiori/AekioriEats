@@ -63,10 +63,9 @@ public class CreateOrderService {
     public CreateOrderResultDto createOrder(
         CreateOrderDto request,
         String idempotencyKeyHeader,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
-        orderAuthorizationService.requireSelfOrAdmin(authenticatedUserId, request.userId(), authenticatedUserRole);
+        orderAuthorizationService.requireSelf(authenticatedUserId, request.userId());
 
         return createOrder(request, idempotencyKeyHeader);
     }

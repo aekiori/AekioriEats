@@ -109,7 +109,7 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 - 복구할 땐 커넥터 `snapshot.mode=schema_only_recovery`로 재설정 후, history 토픽 생성/확인하고 connector를 restart 한다.
 
 
-내부 API 호출 시에는 `X-Internal-Api-Key` 헤더가 필요하다.
+Order 내부 운영 API는 제거했고, 현재는 사용자/사장 플로우 중심으로만 구성했다.
 
 ## 인증/인가 경계 (2026-04)
 - 외부 요청은 Gateway를 통해서만 들어온다고 가정한다.
@@ -117,7 +117,7 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 - `Order`, `User` 도메인은 클라이언트가 보낸 `userId`만 보고 처리하지 않는다.
 - 본인 리소스 규칙 위반 시 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
 - 인증 주체 헤더가 없거나 비정상이면 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
-- `ADMIN` 역할은 운영/관리 케이스에서 소유권 검사 우회가 가능하다.
+- 관리자 예외 권한 없이 사용자/사장 본인 기준으로만 인가한다.
 
 ## 문서
 

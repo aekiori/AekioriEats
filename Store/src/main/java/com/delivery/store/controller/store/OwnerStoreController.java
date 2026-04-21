@@ -73,7 +73,7 @@ public class OwnerStoreController {
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
         return ResponseEntity.ok(
-            storeService.getStore(storeId, authenticatedUser.userId(), authenticatedUser.userRole())
+            storeService.getStore(storeId, authenticatedUser.userId())
         );
     }
 
@@ -88,8 +88,7 @@ public class OwnerStoreController {
             storeService.updateOwnerStore(
                 storeId,
                 request,
-                authenticatedUser.userId(),
-                authenticatedUser.userRole()
+                authenticatedUser.userId()
             )
         );
     }
@@ -100,7 +99,7 @@ public class OwnerStoreController {
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        storeService.deleteOwnerStore(storeId, authenticatedUser.userId(), authenticatedUser.userRole());
+        storeService.deleteOwnerStore(storeId, authenticatedUser.userId());
         return ResponseEntity.noContent().build();
     }
 
@@ -115,8 +114,7 @@ public class OwnerStoreController {
             storeService.updateStoreStatus(
                 storeId,
                 request,
-                authenticatedUser.userId(),
-                authenticatedUser.userRole()
+                authenticatedUser.userId()
             )
         );
     }
@@ -132,8 +130,7 @@ public class OwnerStoreController {
             storeService.replaceDeliveryPolicy(
                 storeId,
                 request,
-                authenticatedUser.userId(),
-                authenticatedUser.userRole()
+                authenticatedUser.userId()
             )
         );
     }
@@ -183,8 +180,7 @@ public class OwnerStoreController {
             storeOrderDecisionService.getStoreOrders(
                 storeId,
                 status,
-                authenticatedUser.userId(),
-                authenticatedUser.userRole()
+                authenticatedUser.userId()
             )
         );
     }
@@ -202,8 +198,7 @@ public class OwnerStoreController {
                 storeId,
                 orderId,
                 request,
-                authenticatedUser.userId(),
-                authenticatedUser.userRole()
+                authenticatedUser.userId()
             )
         );
     }

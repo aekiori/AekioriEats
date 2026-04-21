@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StoreAuthorizationService {
-    private static final String ADMIN_ROLE = "ADMIN";
-
     public long parseAuthenticatedUserId(String rawUserIdHeader) {
         if (rawUserIdHeader == null || rawUserIdHeader.isBlank()) {
             throw unauthorizedPrincipal();
@@ -24,22 +22,14 @@ public class StoreAuthorizationService {
         }
     }
 
-    public void requireSelfOrAdmin(long authenticatedUserId, long targetUserId, String authenticatedUserRole) {
-        if (isAdmin(authenticatedUserRole)) {
-            return;
-        }
-
+    public void requireSelf(long authenticatedUserId, long targetUserId) {
         if (authenticatedUserId != targetUserId) {
             throw forbiddenResourceAccess();
         }
     }
 
-    public void requireStoreOwnerOrAdmin(long authenticatedUserId, long ownerUserId, String authenticatedUserRole) {
-        requireSelfOrAdmin(authenticatedUserId, ownerUserId, authenticatedUserRole);
-    }
-
-    private boolean isAdmin(String role) {
-        return role != null && ADMIN_ROLE.equalsIgnoreCase(role.trim());
+    public void requireStoreOwner(long authenticatedUserId, long ownerUserId) {
+        requireSelf(authenticatedUserId, ownerUserId);
     }
 
     private ApiException unauthorizedPrincipal() {

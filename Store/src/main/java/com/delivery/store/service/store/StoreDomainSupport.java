@@ -19,14 +19,14 @@ public class StoreDomainSupport {
     private final MenuGroupRepository menuGroupRepository;
     private final StoreAuthorizationService storeAuthorizationService;
 
-    public Store requireOwnedStore(Long storeId, long authenticatedUserId, String authenticatedUserRole) {
+    public Store requireOwnedStore(Long storeId, long authenticatedUserId) {
         Store store = findStore(storeId);
-        storeAuthorizationService.requireStoreOwnerOrAdmin(
-            authenticatedUserId,
-            store.getOwnerUserId(),
-            authenticatedUserRole
-        );
+        storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
         return store;
+    }
+
+    public Store requireOwnedStore(Long storeId, long authenticatedUserId, String authenticatedUserRole) {
+        return requireOwnedStore(storeId, authenticatedUserId);
     }
 
     public Store findStore(Long storeId) {
@@ -59,4 +59,3 @@ public class StoreDomainSupport {
             ));
     }
 }
-

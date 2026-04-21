@@ -32,8 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(TestIdempotencyCacheConfig.class)
 class OrderControllerApiTest {
     private static final String USER_ID_HEADER = "X-User-Id";
-    private static final String USER_ROLE_HEADER = "X-User-Role";
-
     @Autowired
     private WebApplicationContext webApplicationContext;
 
@@ -201,7 +199,6 @@ class OrderControllerApiTest {
                 .param("page", "-1")
                 .param("size", "0")
                 .header(USER_ID_HEADER, "1")
-                .header(USER_ROLE_HEADER, "USER")
                 .header("X-Trace-Id", "trace-page-validation-001"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.path").value("/api/v1/orders"))
@@ -214,22 +211,11 @@ class OrderControllerApiTest {
         mockMvc.perform(get("/api/v1/orders")
                 .param("status", "INVALID")
                 .header(USER_ID_HEADER, "1")
-                .header(USER_ROLE_HEADER, "USER")
                 .header("X-Trace-Id", "trace-status-query-001"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.path").value("/api/v1/orders"))
             .andExpect(jsonPath("$.traceId").value("trace-status-query-001"))
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
-    }
-
-    @Test
-    void get_admin_orders_api_returns_403_when_request_user_is_not_admin() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/orders")
-                .param("userId", "2")
-                .header(USER_ID_HEADER, "1")
-                .header(USER_ROLE_HEADER, "USER"))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.code").value("FORBIDDEN_RESOURCE_ACCESS"));
     }
 
     @Test

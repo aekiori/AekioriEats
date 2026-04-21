@@ -13,15 +13,14 @@
 - Transactional Outbox 저장
 - Debezium CDC 기반 Kafka 이벤트 발행
 - Outbox 상태 전환 처리
-- 실패 Outbox 재처리 내부 API
+
 
 ## 인가 정책 (P0)
 - 인증 주체는 Gateway 주입 헤더(`X-User-Id`, `X-User-Role`) 기준으로만 판단한다.
-- `POST /api/v1/orders`: body `userId`와 인증 주체가 같아야 한다. (`ADMIN`은 예외)
+- `POST /api/v1/orders`: body `userId`와 인증 주체가 같아야 한다.
 - `GET /api/v1/orders`: 인증된 본인 주문만 조회한다.
-- `GET /api/v1/admin/orders?userId=...`: `ADMIN`만 특정 사용자 주문을 조회할 수 있다.
-- `GET /api/v1/orders/{orderId}`: 주문 소유자만 조회 가능하다. (`ADMIN`은 예외)
-- `PATCH /api/v1/orders/{orderId}/status`: 주문 소유자만 상태 변경 가능하다. (`ADMIN`은 예외)
+- `GET /api/v1/orders/{orderId}`: 주문 소유자만 조회 가능하다.
+- `PATCH /api/v1/orders/{orderId}/status`: 주문 소유자만 상태 변경 가능하다.
 - 소유권 위반은 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
 - 인증 주체 헤더 누락/비정상은 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
 
@@ -129,15 +128,6 @@ Outbox 상태:
 - `INIT`
 - `PUBLISHED`
 - `FAILED`
-
-## 내부 API
-
-내부 운영 API는 다음 경로를 사용한다.
-
-- `GET /api/v1/internal/outbox?status=FAILED`
-- `POST /api/v1/internal/outbox/{eventId}/replay`
-
-이 경로들은 `X-Internal-Api-Key` 헤더가 있어야 호출할 수 있다.
 
 ## 스키마 관리
 

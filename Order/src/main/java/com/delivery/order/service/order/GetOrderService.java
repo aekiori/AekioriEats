@@ -25,24 +25,16 @@ public class GetOrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderDetailResultDto getOrder(Long orderId, long authenticatedUserId, String authenticatedUserRole) {
+    public OrderDetailResultDto getOrder(Long orderId, long authenticatedUserId) {
         Order order = orderReader.findOrder(orderId);
-        orderAuthorizationService.requireSelfOrAdmin(
-            authenticatedUserId,
-            order.getUserId(),
-            authenticatedUserRole
-        );
+        orderAuthorizationService.requireSelf(authenticatedUserId, order.getUserId());
         return buildOrderDetail(order);
     }
 
-    public OrderStatusResultDto getOrderStatus(Long orderId, long authenticatedUserId, String authenticatedUserRole)
+    public OrderStatusResultDto getOrderStatus(Long orderId, long authenticatedUserId)
     {
         Order order = orderReader.findOrder(orderId);
-        orderAuthorizationService.requireSelfOrAdmin(
-            authenticatedUserId,
-            order.getUserId(),
-            authenticatedUserRole
-        );
+        orderAuthorizationService.requireSelf(authenticatedUserId, order.getUserId());
         return OrderStatusResultDto.from(order);
     }
 

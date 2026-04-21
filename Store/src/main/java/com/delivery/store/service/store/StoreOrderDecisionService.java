@@ -31,16 +31,11 @@ public class StoreOrderDecisionService {
     public List<StoreOrderResultDto> getStoreOrders(
         Long storeId,
         StoreOrder.Status status,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new ApiException("STORE_NOT_FOUND", "Store not found.", HttpStatus.NOT_FOUND));
-        storeAuthorizationService.requireStoreOwnerOrAdmin(
-            authenticatedUserId,
-            store.getOwnerUserId(),
-            authenticatedUserRole
-        );
+        storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
 
         return storeOrderRepository.findByStoreIdAndStatusOrderByCreatedAtDesc(storeId, status)
             .stream()
@@ -53,16 +48,11 @@ public class StoreOrderDecisionService {
         Long storeId,
         Long orderId,
         DecideStoreOrderRequest request,
-        long authenticatedUserId,
-        String authenticatedUserRole
+        long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new ApiException("STORE_NOT_FOUND", "Store not found.", HttpStatus.NOT_FOUND));
-        storeAuthorizationService.requireStoreOwnerOrAdmin(
-            authenticatedUserId,
-            store.getOwnerUserId(),
-            authenticatedUserRole
-        );
+        storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
 
         StoreOrder storeOrder = storeOrderRepository.findByOrderId(orderId)
             .orElseThrow(() -> new ApiException("STORE_ORDER_NOT_FOUND", "Store order not found.", HttpStatus.NOT_FOUND));

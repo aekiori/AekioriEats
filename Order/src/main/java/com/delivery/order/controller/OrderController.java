@@ -42,8 +42,6 @@ public class OrderController {
     public ResponseEntity<CreateOrderResultDto> createOrder(
         @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole,
         @RequestHeader("X-Idempotency-Key")
         @NotBlank
         @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
@@ -54,8 +52,7 @@ public class OrderController {
         CreateOrderResultDto response = createOrderService.createOrder(
             createOrderDto,
             idempotencyKey,
-            authenticatedUserId,
-            authenticatedUserRole
+            authenticatedUserId
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -65,25 +62,21 @@ public class OrderController {
     public ResponseEntity<OrderDetailResultDto> getOrder(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     ) {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(getOrderService.getOrder(orderId, authenticatedUserId, authenticatedUserRole));
+        return ResponseEntity.ok(getOrderService.getOrder(orderId, authenticatedUserId));
     }
 
     @GetMapping("/{orderId}/status")
     public ResponseEntity<OrderStatusResultDto> getOrderStatus(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     )
     {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(getOrderService.getOrderStatus(orderId, authenticatedUserId, authenticatedUserRole));
+        return ResponseEntity.ok(getOrderService.getOrderStatus(orderId, authenticatedUserId));
     }
 
     @GetMapping
@@ -102,14 +95,10 @@ public class OrderController {
     public ResponseEntity<UpdateOrderStatusResultDto> cancelOrder(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     ) {
         long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(
-            updateOrderStatusService.cancelOrder(orderId, authenticatedUserId, authenticatedUserRole)
-        );
+        return ResponseEntity.ok(updateOrderStatusService.cancelOrder(orderId, authenticatedUserId));
     }
 
     @PatchMapping("/{orderId}/status")
@@ -117,17 +106,11 @@ public class OrderController {
         @PathVariable Long orderId,
         @Valid @RequestBody UpdateOrderStatusDto updateOrderStatusDto,
         @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
-        @RequestHeader(value = "X-User-Role", required = true)
-        String authenticatedUserRole
+        String authenticatedUserIdHeader
     ) {
-        orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
+        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         return ResponseEntity.ok(
-            updateOrderStatusService.updateOrderStatus(
-                orderId,
-                updateOrderStatusDto,
-                authenticatedUserRole
-            )
+            updateOrderStatusService.updateOrderStatus(orderId, updateOrderStatusDto, authenticatedUserId)
         );
     }
 }
