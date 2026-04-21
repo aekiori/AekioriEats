@@ -65,48 +65,9 @@ flowchart LR
 ## 멱등성
 
 ### idempotencyKey 를 통한 멱등성 제어
-
-
-#### Http-Header
-- `Idempotency-Key: 1234-abcd-efgh-5678-0000`
-- 멱등키는 비즈니스 데이터가 아니라 전송 제어 메타데이터
-- 바디는 비즈니스 로직 데이터만 담는 게 깔끔
-- HTTP 표준도 헤더에 넣는 방식을 권장
-
-Idempotency-Key 정규화 처리
-
-```java
-private String normalizeIdempotencyKey(String idempotencyKey) {
-    return idempotencyKey.trim();
-}
-```
-
-`@NotBlank` 검증을 통과하더라도 `" Aekiori "` 처럼 공백이 포함된 경우 DB 유니크 제약 조건 및 멱등성 비교 로직에서 의도치 않은 중복 처리가 발생할 수 있다. 따라서 수신 즉시 `trim()` 정규화한다.
-
+[멱동성 처리 - HTTP](../docs/idempotency-http.md)  
 주문 생성 API는 `idempotencyKey`를 **필수** 로 받는다.
 
-1. Redis Lock 확인
-   - Lock 있음 → 409 (처리 중)
-
-
-2. Redis Result 캐시 확인
-   -  캐시 있음 → requestHash 비교
-   - 같음 → 캐시 결과 반환
-   - 다름 → 409
-
-
-3. DB 조회
-   - DB에 있음 → requestHash 비교
-   - 같음 → 반환 + 캐시 저장
-   - 다름 → 409
-
-
-4. 신규 주문 생성
-
-Redis는 아래 키를 사용한다.
-
-- `order:idempotency:lock:{idempotencyKey}`
-- `order:idempotency:result:{idempotencyKey}`
 
 ## Outbox / Kafka
 

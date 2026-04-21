@@ -12,6 +12,7 @@ import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,7 @@ public class CreateOrderService {
             return existing;
         }
 
-        log.info("주문 생성 시작. userId={}, storeId={}", request.userId(), request.storeId());
+        log.info("Order create started. userId={}, storeId={}", request.userId(), request.storeId());
 
         try {
             CreateOrderResultDto result = processCreateOrder(request, idempotencyKey, requestHash);
@@ -71,22 +72,14 @@ public class CreateOrderService {
     }
 
     private CreateOrderResultDto resolveIdempotentResult(String idempotencyKey, String requestHash) {
-        Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey).orElse(null);
-
-        if (existingOrder != null) {
-            validateSameRequest(existingOrder, requestHash);
-            CreateOrderResultDto result = CreateOrderResultDto.from(existingOrder);
-
-            orderIdempotencyCacheService.saveCompletedResult(idempotencyKey, result);
-
-            log.info("DB에서 기존 멱등 주문 반환. idempotencyKey={}, orderId={}", idempotencyKey, existingOrder.getId());
-            return result;
-        }
-
         CreateOrderResultDto cachedResult = orderIdempotencyCacheService.getCompletedResult(idempotencyKey);
 
         if (cachedResult != null) {
-            log.info("Redis 멱등 결과 캐시로 기존 주문 반환. idempotencyKey={}, orderId={}", idempotencyKey, cachedResult.orderId());
+            log.info(
+                "Idempotent order returned from Redis cache. idempotencyKey={}, orderId={}",
+                idempotencyKey,
+                cachedResult.orderId()
+            );
             return cachedResult;
         }
 
@@ -96,7 +89,7 @@ public class CreateOrderService {
             validateProcessingRequest(idempotencyKey, requestHash);
             throw new ApiException(
                 "IDEMPOTENT_REQUEST_IN_PROGRESS",
-                "같은 멱등 키의 요청이 이미 처리 중이다.",
+                "Same idempotent request is already being processed.",
                 HttpStatus.CONFLICT
             );
         }
@@ -105,19 +98,30 @@ public class CreateOrderService {
     }
 
     private CreateOrderResultDto processCreateOrder(CreateOrderDto request, String idempotencyKey, String requestHash) {
+        Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey).orElse(null);
+        if (existingOrder != null) {
+            return restoreExistingOrder(idempotencyKey, requestHash, existingOrder);
+        }
+
         int totalAmount = calculateTotalAmount(request.items());
         int usedPointAmount = request.usedPointAmount();
         int finalAmount = totalAmount - usedPointAmount;
 
         validateFinalAmount(finalAmount);
 
-        Order savedOrder = saveOrder(request, totalAmount, usedPointAmount, finalAmount, idempotencyKey, requestHash);
+        Order savedOrder;
+        try {
+            savedOrder = saveOrder(request, totalAmount, usedPointAmount, finalAmount, idempotencyKey, requestHash);
+        } catch (DataIntegrityViolationException exception) {
+            return resolveExistingOrderAfterDuplicateKey(idempotencyKey, requestHash, exception);
+        }
+
         List<OrderItem> orderItems = saveOrderItems(savedOrder, request.items());
         savedOrder.registerCreatedEvent(orderItems);
         orderRepository.save(savedOrder);
 
         log.info(
-            "주문 생성 완료. orderId={}, userId={}, finalAmount={}",
+            "Order create completed. orderId={}, userId={}, finalAmount={}",
             savedOrder.getId(),
             savedOrder.getUserId(),
             savedOrder.getFinalAmount()
@@ -126,11 +130,37 @@ public class CreateOrderService {
         return CreateOrderResultDto.from(savedOrder);
     }
 
+    private CreateOrderResultDto resolveExistingOrderAfterDuplicateKey(
+        String idempotencyKey,
+        String requestHash,
+        DataIntegrityViolationException exception
+    ) {
+        Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey)
+            .orElseThrow(() -> exception);
+
+        return restoreExistingOrder(idempotencyKey, requestHash, existingOrder);
+    }
+
+    private CreateOrderResultDto restoreExistingOrder(String idempotencyKey, String requestHash, Order existingOrder) {
+        validateSameRequest(existingOrder, requestHash);
+
+        CreateOrderResultDto result = CreateOrderResultDto.from(existingOrder);
+        orderIdempotencyCacheService.saveCompletedResult(idempotencyKey, result);
+
+        log.info(
+            "Existing idempotent order restored from DB. idempotencyKey={}, orderId={}",
+            idempotencyKey,
+            existingOrder.getId()
+        );
+
+        return result;
+    }
+
     private void validateFinalAmount(int finalAmount) {
         if (finalAmount < 0) {
             throw new ApiException(
                 "INVALID_AMOUNT",
-                "최종 결제 금액은 0 이상이어야 한다.",
+                "Final amount must be zero or greater.",
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -142,7 +172,7 @@ public class CreateOrderService {
         if (processingRequestHash != null && !processingRequestHash.equals(requestHash)) {
             throw new ApiException(
                 "IDEMPOTENCY_KEY_CONFLICT",
-                "같은 idempotencyKey로 서로 다른 주문 요청이 들어왔다.",
+                "Different request payload was submitted with the same idempotencyKey.",
                 HttpStatus.CONFLICT
             );
         }
@@ -222,7 +252,7 @@ public class CreateOrderService {
         } catch (Exception exception) {
             throw new ApiException(
                 "REQUEST_HASH_GENERATION_ERROR",
-                "주문 요청 해시 생성에 실패했다.",
+                "Request hash generation failed.",
                 HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
@@ -232,7 +262,7 @@ public class CreateOrderService {
         if (existingOrder.getRequestHash() != null && !existingOrder.getRequestHash().equals(requestHash)) {
             throw new ApiException(
                 "IDEMPOTENCY_KEY_CONFLICT",
-                "같은 idempotencyKey로 서로 다른 주문 요청이 들어왔다.",
+                "Different request payload was submitted with the same idempotencyKey.",
                 HttpStatus.CONFLICT
             );
         }

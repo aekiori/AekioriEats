@@ -48,3 +48,12 @@
 - `Order`, `User` 서비스는 이 헤더를 인증 주체로 강제해서 인가를 수행한다.
 - 즉 하위 서비스는 body/path/query의 `userId` 단독 값을 신뢰하지 않는다.
 - 외부 트래픽은 반드시 Gateway 경유로 들어오게 운영해야 한다.
+
+## 인증/인가 경계
+
+- 외부 요청은 Gateway를 통해서만 들어온다고 가정한다.
+- Gateway가 JWT 검증 후 주입한 `X-User-Id`, `X-User-Role`만 신뢰한다.
+- `Order`, `User` 도메인은 클라이언트가 보낸 `userId`만 보고 처리하지 않는다.
+- 본인 리소스 규칙 위반 시 `403 FORBIDDEN` + `FORBIDDEN_RESOURCE_ACCESS`를 반환한다.
+- 인증 주체 헤더가 없거나 비정상이면 `401 UNAUTHORIZED` + `UNAUTHORIZED_PRINCIPAL`을 반환한다.
+- 관리자 예외 권한 없이 사용자/사장 본인 기준으로만 인가한다.

@@ -277,4 +277,55 @@ docker compose --env-file infra/docker/infra/.env.infra -f infra/docker/infra/co
 - SMT 토픽 `outbox.event.ORDER`를 중심으로 다음 서비스가 소비한다
 - Order는 다시 자기 Outbox를 소비해서 `PUBLISHED`로 상태를 정리한다
 
+## 15. DB / 커넥터 구성 메모
+
+- 실무 기준은 서비스별로 DB 인스턴스를 분리하고 커넥터도 서비스별로 분리하는 게 원칙이다. (MSA/DDD 관점에서 가장 이상적인 형태)
+- 다만 네카오급 규모가 아니면 비용/운영 현실 문제로 꼭 그렇지만은 않다.
+- 이 프로젝트 로컬 환경은 노트북 사양 이슈로 DB/커넥터를 최소 구성으로 합쳐서 돌렸다.
+- 로컬 목적은 운영 토폴로지 재현보다 기능 검증 우선이다.
+
+### Schema History 토픽 주의사항
+
+- `schema.history.internal.kafka.topic`(예: `schemahistory.delivery.order`)은 Debezium 내부 메타 토픽이다.
+- 브로커 `auto.create.topics.enable=true` + ACL이 있으면 자동 생성될 수 있지만 환경에 따라 안 될 수 있다.
+- 이 토픽이 없거나 삭제되면 connector task가 `The db history topic is missing`으로 `FAILED` 난다.
+- 실무/로컬 모두 history 토픽은 삭제하지 않는 걸 기본으로 두고, 필요하면 미리 수동 생성(pre-create)해두는 게 안전하다.
+- 복구할 땐 커넥터 `snapshot.mode=schema_only_recovery`로 재설정 후, history 토픽 생성/확인하고 connector를 restart 한다.
+
+## 16. Kafka 메시지 포맷
+
+Outbox 이벤트는 Debezium EventRouter SMT를 통해 Kafka로 발행된다.
+
+메시지 구조 예시:
+
+```json
+{
+  "topic": "outbox.event.OrderCreated",
+  "partition": 0,
+  "offset": 0,
+  "key": {
+    "payload": "1"
+  },
+  "headers": {
+    "id": "1a2cfb6d-979e-4166-b9fb-a35f84207e96",
+    "eventType": "OrderCreated",
+    "aggregateId": "1"
+  },
+  "value": {
+    "eventId": "1a2cfb6d-979e-4166-b9fb-a35f84207e96",
+    "eventType": "OrderCreated",
+    "schemaVersion": 1,
+    "orderId": 1,
+    "storeId": 3,
+    "userId": 1,
+    "totalAmount": 19900,
+    "usedPointAmount": 0,
+    "finalAmount": 19900,
+    "occurredAt": "2026-04-15T21:16:04.9481829"
+  }
+}
+```
+
+토픽은 Terraform에서 명시적으로 관리하고, Kafka Connect 내부 토픽과 Debezium schema history 토픽은 각 컴포넌트가 관리한다.
+
 즉 이 프로젝트에서 Kafka / Debezium의 역할은 “주문 저장과 이벤트 발행을 느슨하게 연결하면서도 정합성을 잃지 않게 만드는 것”이다.

@@ -2,6 +2,20 @@
 
 이 문서는 AekioriEats를 로컬에서 처음 띄울 때 필요한 필수 절차를 한 곳에 모아둔 실행 순서표다.
 
+요약 명령:
+
+```cmd
+docker compose --env-file infra/docker/infra/.env.infra -f infra/docker/infra/compose.infra.yml up -d --build
+cd infra\terraform\kafka
+terraform init
+terraform plan
+terraform apply
+cd ..\..\..
+infra\debezium\register-all-outbox-connectors.cmd
+docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.app.yml up -d --build
+// 또는 앱은 로컬에서 띄우거나
+```
+
 ## 전체 순서
 
 1. 인프라 컨테이너 기동
