@@ -2,6 +2,8 @@ package com.delivery.order.service.order;
 
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.domain.order.OrderItem;
+import com.delivery.order.domain.order.OrderStatusHistory;
+import com.delivery.order.constant.OrderStatusChangeReason;
 import com.delivery.order.dto.request.CreateOrderDto;
 import com.delivery.order.dto.request.CreateOrderItemDto;
 import com.delivery.order.dto.response.CreateOrderResultDto;
@@ -36,6 +38,7 @@ public class CreateOrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderIdempotencyCacheService orderIdempotencyCacheService;
     private final OrderAuthorizationService orderAuthorizationService;
+    private final RecordOrderStatusHistoryService recordOrderStatusHistoryService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -115,6 +118,15 @@ public class CreateOrderService {
         } catch (DataIntegrityViolationException exception) {
             return resolveExistingOrderAfterDuplicateKey(idempotencyKey, requestHash, exception);
         }
+
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            null,
+            Order.Status.PENDING,
+            OrderStatusChangeReason.ORDER_CREATED,
+            OrderStatusHistory.SourceType.ORDER_CREATED,
+            null
+        );
 
         List<OrderItem> orderItems = saveOrderItems(savedOrder, request.items());
         savedOrder.registerCreatedEvent(orderItems);

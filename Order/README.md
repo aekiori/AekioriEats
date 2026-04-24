@@ -8,6 +8,7 @@
 - 주문 단건 조회
 - 주문 목록 조회
 - 주문 상태 변경
+- 주문 상태 이력 기록
 - 주문 취소 및 환불
 - Redis 기반 멱등성 처리
 - Transactional Outbox 저장
@@ -62,6 +63,15 @@ flowchart LR
 - `REFUND_PENDING -> REFUNDED`
 - `REFUND_PENDING -> CANCELLED`
 
+### 상태 이력 기록 기준
+
+- 주문 상태 이력은 `order_status_history` 테이블에 남긴다.
+- 일반적인 상태 변경은 `fromStatus -> toStatus`로 기록한다.
+- 최초 주문 생성은 상태 변경이 아니라 생성이므로 `null -> PENDING`으로 기록한다.
+- `INITIAL`, `NONE` 같은 센티널 상태는 쓰지 않는다.
+  - Order.Status`가 실제 주문 상태만 표현해야 하고, 히스토리 전용 가짜 상태가 섞이면 도메인 의미가 흐려지기 때문이다.
+  - 따러서 최초 생성 여부는 `sourceType=ORDER_CREATED`와 `fromStatus=null` 조합으로 표현한다.
+
 ## 멱등성
 
 ### idempotencyKey 를 통한 멱등성 제어
@@ -96,6 +106,7 @@ Outbox 상태:
 
 - 마이그레이션 위치: `Order/src/main/resources/db/migration`
 - 기본 스크립트: `V1__init_order_schema.sql`
+- 상태 이력 스크립트: `V2__add_order_status_history.sql`
 - JPA `ddl-auto`는 운영 설정에서 `validate`로 두고, 엔티티와 스키마 일치 여부만 확인한다.
 
 ## 로컬 실행
@@ -110,8 +121,11 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 Debezium connector 등록:
 
 ```cmd
-curl -X POST -H "Content-Type: application/json" --data-binary @Order\infra\debezium\order-outbox-connector-smt.json http://localhost:8083/connectors
+infra\debezium\register-all-outbox-connectors.cmd
 ```
+
+- 현재 커넥터 등록은 `PUT /connectors/{name}/config` 업서트 방식으로 처리한다.
+- 각 서비스 JSON에서 `name`은 URL에 쓰고, `config` 내용만 body로 보낸다.
 
 ## 테스트
 

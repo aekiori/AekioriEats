@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class OrderStatusHistory {
     public enum SourceType {
+        ORDER_CREATED,
         API,
         STORE_VALIDATION_EVENT,
         PAYMENT_EVENT,
@@ -44,7 +45,7 @@ public class OrderStatusHistory {
     private Long orderId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(length = 30)
     private Order.Status fromStatus;
 
     @Enumerated(EnumType.STRING)

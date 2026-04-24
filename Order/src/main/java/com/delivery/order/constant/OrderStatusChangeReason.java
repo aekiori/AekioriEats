@@ -1,6 +1,7 @@
 package com.delivery.order.constant;
 
 public final class OrderStatusChangeReason {
+    public static final String ORDER_CREATED = "Order created.";
     public static final String STORE_VALIDATION_PASSED = "Store validation passed.";
     public static final String STORE_VALIDATION_REJECTED = "Store validation rejected the order.";
     public static final String PAYMENT_SUCCEEDED = "Payment succeeded.";

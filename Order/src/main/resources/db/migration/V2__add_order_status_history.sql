@@ -1,7 +1,7 @@
 CREATE TABLE order_status_history (
     id BIGINT NOT NULL AUTO_INCREMENT,
     order_id BIGINT NOT NULL,
-    from_status VARCHAR(30) NOT NULL,
+    from_status VARCHAR(30),
     to_status VARCHAR(30) NOT NULL,
     reason VARCHAR(500),
     source_type VARCHAR(50) NOT NULL,
