@@ -74,6 +74,7 @@ private String normalizeIdempotencyKey(String idempotencyKey) {
 | 같은 키 + 동일 요청이 현재 처리 중 | `409 CONFLICT` |
 | 새로운 요청 | `201 CREATED` |
 
+## 요청 분기 흐름
 1. Redis Lock 확인
     - Lock 있음 → 409 (처리 중)
 

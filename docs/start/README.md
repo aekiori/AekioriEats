@@ -24,7 +24,7 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 4. 애플리케이션 컨테이너 기동
 5. 상태 확인
 
-## 0. 전제 조건
+## 전제 조건
 
 로컬에 아래 도구가 필요하다.
 
@@ -91,12 +91,6 @@ infra\debezium\register-all-outbox-connectors.cmd
 
 기본 Kafka Connect 주소는 `http://localhost:8083`이다.
 
-다른 주소로 등록해야 하면 첫 번째 인자로 넘긴다.
-
-```cmd
-infra\debezium\register-all-outbox-connectors.cmd http://localhost:8083
-```
-
 등록 대상:
 
 - Auth outbox connector
@@ -106,20 +100,12 @@ infra\debezium\register-all-outbox-connectors.cmd http://localhost:8083
 - Payment outbox connector
 - Point outbox connector
 
-주의:
-
-- 현재 스크립트는 `POST /connectors` 방식이다.
-- 이미 connector가 있으면 Kafka Connect가 `409 Conflict`를 반환한다.
-- 기존 connector 설정을 바꾸려면 기존 connector를 삭제한 뒤 다시 등록하거나, 필요 시 `PUT /connectors/{name}/config` 방식으로 별도 갱신한다.
-
 상태 확인:
 
 ```cmd
 curl http://localhost:8083/connectors
-curl http://localhost:8083/connectors/order-outbox-connector/status
-curl http://localhost:8083/connectors/store-outbox-connector/status
-curl http://localhost:8083/connectors/payment-outbox-connector/status
-curl http://localhost:8083/connectors/point-outbox-connector/status
+또는 
+http://localhost:8989/ui/clusters/local/connectors (Kakfa UI)
 ```
 
 ## 4. 애플리케이션 컨테이너 기동
@@ -145,7 +131,7 @@ docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.
 
 - Docker 내부 서비스는 Kafka를 `kafka:29092`로 바라본다.
 - 호스트에서 실행하는 도구나 로컬 IDE 실행 앱은 Kafka를 보통 `localhost:9092`로 바라본다.
-- 로컬 IDE로 서비스를 직접 띄우는 경우에는 `infra/docker/app/.env.app` 값과 애플리케이션 로컬 설정의 Kafka 주소를 혼동하지 않는다.
+- 로컬 IDE로 서비스를 직접 띄우는 경우에는 `infra/docker/app/.env.app` 값과 애플리케이션 로컬 설정의 Kafka 주소를 혼동하지 않도록 한다.
 
 ## 5. 상태 확인
 
@@ -159,48 +145,7 @@ Kafka 토픽/컨슈머 확인:
 
 ```cmd
 infra\scripts\list_kafka_runtime.cmd
+또는 (Kakfa UI)
+http://localhost:8989/ui/clusters/local/all-topics
+http://localhost:8989/ui/clusters/local/consumer-groups
 ```
-
-주요 UI:
-
-- Kafka UI: `http://localhost:8088`
-- Kafka Connect: `http://localhost:8083`
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000`
-- Frontend: `http://localhost:3001`
-- Gateway: `http://localhost:8080`
-
-## 자주 하는 작업
-
-인프라만 다시 빌드:
-
-```cmd
-docker compose --env-file infra/docker/infra/.env.infra -f infra/docker/infra/compose.infra.yml up -d --build
-```
-
-앱만 다시 빌드:
-
-```cmd
-docker compose --env-file infra/docker/app/.env.app -f infra/docker/app/compose.app.yml up -d --build
-```
-
-connector 목록 확인:
-
-```cmd
-curl http://localhost:8083/connectors
-```
-
-connector 삭제 후 재등록 예시:
-
-```cmd
-curl -X DELETE http://localhost:8083/connectors/order-outbox-connector
-infra\debezium\register-all-outbox-connectors.cmd
-```
-
-## 문서 위치 기준
-
-- 실행 순서: `docs/start/README.md`
-- Kafka 토픽 관리: `docs/infra/kafka-terraform.md`
-- Kafka/Debezium 운영 메모: `docs/infra/kafka-debezium.md`
-- 이벤트 흐름 설계: `docs/event-design.md`
-- 관측 구성: `docs/infra/prometheus-grafana.md`

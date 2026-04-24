@@ -12,28 +12,28 @@ pushd "%ROOT%" >NUL || (
 
 set "FAILED="
 
-call :post_connector "auth-outbox-connector" "Auth\infra\debezium\auth-outbox-connector-smt.json"
+call :put_connector "Auth\infra\debezium\auth-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :post_connector "user-outbox-connector" "User\infra\debezium\user-outbox-connector-smt.json"
+call :put_connector "User\infra\debezium\user-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :post_connector "order-outbox-connector" "Order\infra\debezium\order-outbox-connector-smt.json"
+call :put_connector "Order\infra\debezium\order-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :post_connector "store-outbox-connector" "Store\infra\debezium\store-outbox-connector-smt.json"
+call :put_connector "Store\infra\debezium\store-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :post_connector "payment-outbox-connector" "Payment\infra\debezium\payment-outbox-connector-smt.json"
+call :put_connector "Payment\infra\debezium\payment-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
-call :post_connector "point-outbox-connector" "Point\infra\debezium\point-outbox-connector-smt.json"
+call :put_connector "Point\infra\debezium\point-outbox-connector-smt.json"
 if errorlevel 1 set "FAILED=1"
 
 if defined FAILED (
     echo.
     echo [FAIL] one or more connectors failed
-    echo [HINT] POST returns 409 if a connector already exists. Delete it first or switch this script back to PUT upsert.
+    echo [HINT] This script uses PUT upsert. Check connector config JSON and Kafka Connect health.
     popd >NUL
     exit /b 1
 )
@@ -43,22 +43,40 @@ echo [OK] all connectors are registered
 popd >NUL
 exit /b 0
 
-:post_connector
-set "NAME=%~1"
-set "FILE=%~2"
+:put_connector
+set "FILE=%~1"
+set "NAME="
+set "TEMP_FILE="
 
 if not exist "%FILE%" (
     echo [FAIL] missing file: %FILE%
     exit /b 1
 )
 
-echo [INFO] register connector: %NAME%
-for /f %%R in ('curl -s -o NUL -w "%%{http_code}" -X POST -H "Content-Type: application/json" --data-binary "@%FILE%" "%CONNECT_URL%/connectors"') do set "POST_CODE=%%R"
+for /f "usebackq delims=" %%N in (`powershell -NoProfile -Command "$json = Get-Content -LiteralPath '%FILE%' -Raw | ConvertFrom-Json; if (-not $json.name) { exit 1 }; [Console]::Out.Write($json.name)"`) do set "NAME=%%N"
+if not defined NAME (
+    echo [FAIL] cannot extract connector name: %FILE%
+    exit /b 1
+)
 
-if "!POST_CODE!"=="201" (
-    echo [OK] registered: %NAME%
+set "TEMP_FILE=%TEMP%\%NAME%-config.json"
+
+echo [INFO] upsert connector: %NAME%
+powershell -NoProfile -Command ^
+    "$json = Get-Content -LiteralPath '%FILE%' -Raw | ConvertFrom-Json; $json.config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath '%TEMP_FILE%' -Encoding UTF8"
+if errorlevel 1 (
+    echo [FAIL] cannot extract config body: %FILE%
+    if exist "%TEMP_FILE%" del /q "%TEMP_FILE%" >NUL 2>&1
+    exit /b 1
+)
+
+for /f %%R in ('curl -s -o NUL -w "%%{http_code}" -X PUT -H "Content-Type: application/json" --data-binary "@%TEMP_FILE%" "%CONNECT_URL%/connectors/%NAME%/config"') do set "PUT_CODE=%%R"
+if exist "%TEMP_FILE%" del /q "%TEMP_FILE%" >NUL 2>&1
+
+if "!PUT_CODE!"=="200" (
+    echo [OK] upserted: %NAME%
     exit /b 0
 )
 
-echo [FAIL] register failed. connector=%NAME% status=!POST_CODE!
+echo [FAIL] upsert failed. connector=%NAME% status=!PUT_CODE!
 exit /b 1

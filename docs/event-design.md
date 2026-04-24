@@ -57,9 +57,9 @@ PG 결제 진행 또는 결제 confirm 처리
 
 [8] order-service consume PaymentSucceeded
 주문 상태 = PAID
--> order outbox: OrderPaid
+-> order outbox: OrderStatusChanged(targetStatus=PAID)
 
-[9] store-service consume OrderPaid
+[9] store-service consume OrderStatusChanged(targetStatus=PAID)
 가게 최종 수락/거절
 -> 수락: StoreOrderAccepted
 -> 거절: StoreOrderRejected
@@ -130,44 +130,11 @@ PG 결제 진행 또는 결제 confirm 처리
 
 ## 이벤트 타입과 토픽
 
-Outbox 이벤트 토픽은 Debezium Outbox SMT의 `event_type` 기준으로 분리한다.
+이벤트 토픽 naming, Debezium Outbox SMT 라우팅, aggregate -> event_type 전환 배경은 아래 문서를 기준으로 본다.
 
-Debezium 설정 기준:
+- [Kafka / Debezium 운영 정리](./infra/kafka-debezium.md)
 
-```json
-{
-  "transforms.outbox.route.by.field": "event_type",
-  "transforms.outbox.route.topic.replacement": "outbox.event.${routedByValue}"
-}
-```
-
-주요 토픽:
-
-```text
-outbox.event.OrderCreated
-outbox.event.OrderValidated
-outbox.event.OrderRejected
-outbox.event.OrderStatusChanged
-outbox.event.PaymentRequested
-outbox.event.PaymentSucceeded
-outbox.event.PaymentFailed
-outbox.event.PaymentRefunded
-outbox.event.StoreOrderAccepted
-outbox.event.StoreOrderRejected
-outbox.event.PointDeductionRequested
-outbox.event.PointDeducted
-outbox.event.PointDeductionFailed
-```
-
-레거시/전환용 aggregate 토픽:
-
-```text
-outbox.event.ORDER
-outbox.event.USER
-outbox.event.PAYMENT
-```
-
-신규 주문-결제 흐름 컨슈머는 가능한 한 이벤트 타입별 토픽만 구독한다.
+이 문서에서는 서비스 이벤트 흐름과 책임만 다룬다.
 
 ## 서비스별 책임
 
@@ -291,6 +258,9 @@ RELEASE
 - `payment-service`가 `PointDeducted`를 consume → PG 결제 이어가기
 - `payment-service`가 `PointDeductionFailed`를 consume → `PaymentFailed` 발행
 - 포인트 사용 주문의 환불 이벤트 연계 (`PointRefundRequested`)
+
+이후 확장:
+- Saga timeout: Order 생성 후 N분 내 `PaymentSucceeded`가 없으면 스케줄러나 별도 timeout-service가 `FAILED`로 전환하고 후속 보상 이벤트를 발행하는 방식으로 확장할 수 있다.
 
 이후 확장:
 - Saga timeout 처리 (결제 응답 없을 때 Order 자동 FAILED 전환)
