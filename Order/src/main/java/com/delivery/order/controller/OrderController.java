@@ -9,6 +9,11 @@ import com.delivery.order.service.order.GetOrderService;
 import com.delivery.order.service.order.GetOrdersService;
 import com.delivery.order.service.order.OrderAuthorizationService;
 import com.delivery.order.service.order.UpdateOrderStatusService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
+@Tag(name = "Order", description = "주문 생성, 조회, 상태 변경 API")
 public class OrderController {
     private final CreateOrderService createOrderService;
     private final GetOrderService getOrderService;
@@ -39,6 +45,23 @@ public class OrderController {
     private final OrderAuthorizationService orderAuthorizationService;
 
     @PostMapping
+    @Operation(summary = "주문 생성", description = "idempotency key와 X-User-Id 헤더를 받아 주문을 생성한다.")
+    @Parameters({
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        ),
+        @Parameter(
+            name = "X-Idempotency-Key",
+            in = ParameterIn.HEADER,
+            description = "주문 생성 멱등성 키(UUID v4)",
+            required = true,
+            example = "2f1d6df2-188d-4f39-8d3d-8fa2d6af7302"
+        )
+    })
     public ResponseEntity<CreateOrderResultDto> createOrder(
         @RequestHeader(value = "X-User-Id", required = true)
         String authenticatedUserIdHeader,
@@ -59,6 +82,17 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
+    @Operation(summary = "주문 상세 조회", description = "주문 상세와 상태 이력을 함께 조회한다.")
+    @Parameters({
+        @Parameter(name = "orderId", description = "조회할 주문 ID", required = true, example = "95"),
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        )
+    })
     public ResponseEntity<OrderDetailResultDto> getOrder(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
@@ -69,6 +103,17 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}/status")
+    @Operation(summary = "주문 상태 조회", description = "주문 상태만 빠르게 조회한다.")
+    @Parameters({
+        @Parameter(name = "orderId", description = "조회할 주문 ID", required = true, example = "95"),
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        )
+    })
     public ResponseEntity<OrderStatusResultDto> getOrderStatus(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
@@ -80,6 +125,19 @@ public class OrderController {
     }
 
     @GetMapping
+    @Operation(summary = "내 주문 목록 조회", description = "상태, 페이지, 개수 조건으로 내 주문 목록을 조회한다.")
+    @Parameters({
+        @Parameter(name = "status", description = "필터할 주문 상태", example = "PAID"),
+        @Parameter(name = "page", description = "페이지 번호(0부터 시작)", example = "0"),
+        @Parameter(name = "limit", description = "페이지 크기", example = "20"),
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        )
+    })
     public ResponseEntity<OrderPageResultDto> getMyOrders(
         @RequestParam(required = false) Order.Status status,
         @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -92,6 +150,17 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/cancel")
+    @Operation(summary = "주문 취소", description = "주문 소유자가 주문을 취소한다.")
+    @Parameters({
+        @Parameter(name = "orderId", description = "취소할 주문 ID", required = true, example = "95"),
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        )
+    })
     public ResponseEntity<UpdateOrderStatusResultDto> cancelOrder(
         @PathVariable Long orderId,
         @RequestHeader(value = "X-User-Id", required = true)
@@ -102,6 +171,17 @@ public class OrderController {
     }
 
     @PatchMapping("/{orderId}/status")
+    @Operation(summary = "주문 상태 변경", description = "주문 소유자가 주문 상태를 직접 변경한다.")
+    @Parameters({
+        @Parameter(name = "orderId", description = "상태를 변경할 주문 ID", required = true, example = "95"),
+        @Parameter(
+            name = "X-User-Id",
+            in = ParameterIn.HEADER,
+            description = "Gateway가 주입하는 사용자 ID 헤더",
+            required = true,
+            example = "1"
+        )
+    })
     public ResponseEntity<UpdateOrderStatusResultDto> updateOrderStatus(
         @PathVariable Long orderId,
         @Valid @RequestBody UpdateOrderStatusDto updateOrderStatusDto,

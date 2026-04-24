@@ -9,6 +9,10 @@
 
 ## API
 
+### Swagger
+- UI: `http://localhost:8082/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8082/v3/api-docs`
+
 ### 1) 사용자 생성 (주로 내부/운영 용도)
 `POST /api/v1/users`
 

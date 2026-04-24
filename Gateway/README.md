@@ -30,6 +30,11 @@
 .\gradlew.bat bootRun
 ```
 
+## Swagger
+- Gateway는 현재 컨트롤러 기반 API 문서 대상이 아니다.
+- 라우팅/필터만 담당하고 직접 제공하는 REST 엔드포인트가 거의 없어서 Swagger를 따로 붙이지 않았다.
+- 실제 API 문서는 각 도메인 서비스 Swagger를 기준으로 본다.
+
 ## 보안 하드닝 메모
 - `Authorization` 헤더는 `Bearer ` prefix 제거 후 `trim()` 처리한다.
 - 그래서 `Bearer {token}` 뿐 아니라 `Bearer  {token}`(공백 2개 이상)도 정상 파싱된다.

@@ -77,3 +77,9 @@ management:
                 http.server.requests: true
         tags:
             application: ${spring.application.name}
+
+springdoc:
+    api-docs:
+        path: /v3/api-docs
+    swagger-ui:
+        path: /swagger-ui.html

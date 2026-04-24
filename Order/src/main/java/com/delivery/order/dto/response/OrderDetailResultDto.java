@@ -15,10 +15,15 @@ public record OrderDetailResultDto(
     Integer usedPointAmount,
     Integer finalAmount,
     List<OrderItemResultDto> items,
+    List<OrderStatusHistoryResultDto> statusHistories,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
-    public static OrderDetailResultDto from(Order order, List<OrderItemResultDto> items) {
+    public static OrderDetailResultDto from(
+        Order order,
+        List<OrderItemResultDto> items,
+        List<OrderStatusHistoryResultDto> statusHistories
+    ) {
         return new OrderDetailResultDto(
             order.getId(),
             order.getUserId(),
@@ -29,6 +34,7 @@ public record OrderDetailResultDto(
             order.getUsedPointAmount(),
             order.getFinalAmount(),
             items,
+            statusHistories,
             order.getCreatedAt(),
             order.getUpdatedAt()
         );

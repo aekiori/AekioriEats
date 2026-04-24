@@ -21,6 +21,10 @@ Payment 서비스
 
 ## API
 
+### Swagger
+- UI: `http://localhost:8087/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8087/v3/api-docs`
+
 ```http
 GET /api/v1/points/users/{userId}/balance
 POST /api/v1/points/users/{userId}/charge

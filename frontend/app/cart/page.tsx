@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
+import { ensureDevSession } from "@/lib/dev-session";
 import { CartSnapshot, clearCart, getCart, getCartTotals, updateCartItemQuantity } from "@/lib/cart-storage";
 import { apiRequest, HttpError } from "@/lib/http";
 import { CreateOrderRequest, CreateOrderResponse } from "@/lib/types";
@@ -49,6 +50,7 @@ export default function CartPage() {
     setError("");
 
     try {
+      await ensureDevSession();
       const tokenBundle = getTokenBundle();
       if (!tokenBundle?.accessToken) {
         throw new Error("로그인이 필요합니다. 먼저 로그인한 뒤 다시 주문해주세요.");

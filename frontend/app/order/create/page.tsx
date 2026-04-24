@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { SessionPanel } from "@/components/SessionPanel";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
+import { ensureDevSession } from "@/lib/dev-session";
 import { apiRequest, HttpError } from "@/lib/http";
 import {
   CreateOrderItemRequest,
@@ -71,7 +72,7 @@ export default function CreateOrderPage() {
     setLoadedOrder(null);
 
     try {
-      const auth = resolveAuthContext();
+      const auth = await resolveAuthContext();
       const request: CreateOrderRequest = {
         userId: auth.userId,
         storeId: parsePositiveInt(storeId, "Store ID"),
@@ -106,7 +107,7 @@ export default function CreateOrderPage() {
     setLoadedOrder(null);
 
     try {
-      const auth = resolveAuthContext();
+      const auth = await resolveAuthContext();
       const targetOrderId = parsePositiveInt(orderIdInput, "Order ID");
       const response = await apiRequest<OrderDetailResponse>(`/api/v1/orders/${targetOrderId}`, {
         method: "GET",
@@ -128,7 +129,7 @@ export default function CreateOrderPage() {
     setStoreSearchResult(null);
 
     try {
-      const auth = resolveAuthContext();
+      const auth = await resolveAuthContext();
       const query = searchQuery.trim();
       if (!query) {
         throw new Error("Search query is required.");
@@ -345,7 +346,8 @@ export default function CreateOrderPage() {
   );
 }
 
-function resolveAuthContext(): AuthContext {
+async function resolveAuthContext(): Promise<AuthContext> {
+  await ensureDevSession();
   const bundle = getTokenBundle();
   if (!bundle?.accessToken) {
     throw new Error("Login required.");

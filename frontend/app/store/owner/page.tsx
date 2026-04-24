@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { SessionPanel } from "@/components/SessionPanel";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
+import { ensureDevSession } from "@/lib/dev-session";
 import { apiRequest, HttpError } from "@/lib/http";
 import { OwnerStoreSummaryResponse, StoreOrderDecisionResponse, StoreOrderResponse } from "@/lib/types";
 
@@ -54,6 +55,7 @@ export default function OwnerStorePage() {
     setLoading(true);
     setError("");
     try {
+      await ensureDevSession();
       const auth = resolveAuthContext();
       const nextStores = await apiRequest<OwnerStoreSummaryResponse[]>("/api/v1/owner/stores", {
         method: "GET",

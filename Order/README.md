@@ -100,6 +100,11 @@ Outbox 상태:
 - `PUBLISHED`
 - `FAILED`
 
+## Swagger
+
+- UI: `http://localhost:8081/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8081/v3/api-docs`
+
 ## 스키마 관리
 
 스키마는 Flyway 마이그레이션으로 관리한다.

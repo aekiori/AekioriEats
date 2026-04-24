@@ -3,8 +3,10 @@ package com.delivery.order.service.order;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.response.OrderDetailResultDto;
 import com.delivery.order.dto.response.OrderItemResultDto;
+import com.delivery.order.dto.response.OrderStatusHistoryResultDto;
 import com.delivery.order.dto.response.OrderStatusResultDto;
 import com.delivery.order.repository.order.OrderItemRepository;
+import com.delivery.order.repository.order.OrderStatusHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import java.util.List;
 public class GetOrderService {
     private final OrderReader orderReader;
     private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final OrderAuthorizationService orderAuthorizationService;
 
     @Transactional(readOnly = true)
@@ -42,7 +45,9 @@ public class GetOrderService {
         List<OrderItemResultDto> items = orderItemRepository.findByOrderId(order.getId()).stream()
             .map(OrderItemResultDto::from)
             .toList();
+        List<OrderStatusHistoryResultDto> statusHistories =
+            orderStatusHistoryRepository.findStatusHistoryByOrderId(order.getId());
 
-        return OrderDetailResultDto.from(order, items);
+        return OrderDetailResultDto.from(order, items, statusHistories);
     }
 }

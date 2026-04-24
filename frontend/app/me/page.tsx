@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SessionPanel } from "@/components/SessionPanel";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
+import { ensureDevSession } from "@/lib/dev-session";
 import { apiRequest, HttpError } from "@/lib/http";
 import { UserDetailResponse } from "@/lib/types";
 
@@ -19,11 +20,10 @@ export default function MePage() {
     setLoading(true);
     setError("");
     try {
+      await ensureDevSession();
       const bundle = getTokenBundle();
       if (!bundle?.accessToken) {
-        setError("Login required.");
-        setUser(null);
-        return;
+        throw new Error("Login required.");
       }
 
       const payload = decodeJwtPayload(bundle.accessToken);

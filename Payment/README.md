@@ -97,6 +97,10 @@ SUCCESS -> REFUNDED
 
 ## API
 
+### Swagger
+- UI: `http://localhost:8086/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8086/v3/api-docs`
+
 ### 결제 확정
 
 ```http

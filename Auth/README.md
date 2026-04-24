@@ -12,6 +12,10 @@
 
 ## API
 
+### Swagger
+- UI: `http://localhost:8084/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8084/v3/api-docs`
+
 ### 1) 회원가입
 `POST /api/v1/auth/signup`
 

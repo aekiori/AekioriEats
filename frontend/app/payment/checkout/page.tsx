@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { SessionPanel } from "@/components/SessionPanel";
 import { decodeJwtPayload, getTokenBundle } from "@/lib/auth-storage";
+import { ensureDevSession } from "@/lib/dev-session";
 import { apiRequest, HttpError } from "@/lib/http";
 import { OrderDetailResponse } from "@/lib/types";
 
@@ -60,23 +61,32 @@ export default function CheckoutPage() {
   }, [amount, orderId, orderReady, paymentId, sdkReady]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryOrderId = params.get("orderId");
-    const queryAmount = params.get("amount");
-    const queryPaymentId = params.get("paymentId");
+    void (async () => {
+      try {
+        await ensureDevSession();
+      } catch (caught) {
+        setError(toErrorMessage(caught));
+        return;
+      }
 
-    if (queryOrderId) {
-      setOrderId(queryOrderId);
-      void preparePaymentFromOrder(queryOrderId);
-    }
-    if (queryAmount) {
-      setAmount(queryAmount);
-    }
-    if (queryPaymentId && isUuidV4(queryPaymentId)) {
-      setPaymentId(queryPaymentId);
-    } else if (queryPaymentId) {
-      setPaymentId(generatePaymentId());
-    }
+      const params = new URLSearchParams(window.location.search);
+      const queryOrderId = params.get("orderId");
+      const queryAmount = params.get("amount");
+      const queryPaymentId = params.get("paymentId");
+
+      if (queryOrderId) {
+        setOrderId(queryOrderId);
+        void preparePaymentFromOrder(queryOrderId);
+      }
+      if (queryAmount) {
+        setAmount(queryAmount);
+      }
+      if (queryPaymentId && isUuidV4(queryPaymentId)) {
+        setPaymentId(queryPaymentId);
+      } else if (queryPaymentId) {
+        setPaymentId(generatePaymentId());
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -101,22 +111,31 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryOrderId = params.get("orderId");
-    const queryAmount = params.get("amount");
-    const queryPaymentId = params.get("paymentId");
+    void (async () => {
+      try {
+        await ensureDevSession();
+      } catch (caught) {
+        setError(toErrorMessage(caught));
+        return;
+      }
 
-    if (!queryOrderId || !queryAmount || !queryPaymentId || !isUuidV4(queryPaymentId)) {
-      return;
-    }
+      const params = new URLSearchParams(window.location.search);
+      const queryOrderId = params.get("orderId");
+      const queryAmount = params.get("amount");
+      const queryPaymentId = params.get("paymentId");
 
-    const autoConfirmKey = `${queryOrderId}:${queryPaymentId}`;
-    if (autoConfirmKeyRef.current === autoConfirmKey) {
-      return;
-    }
-    autoConfirmKeyRef.current = autoConfirmKey;
+      if (!queryOrderId || !queryAmount || !queryPaymentId || !isUuidV4(queryPaymentId)) {
+        return;
+      }
 
-    void autoConfirmAndWatch(queryOrderId, queryPaymentId, queryAmount);
+      const autoConfirmKey = `${queryOrderId}:${queryPaymentId}`;
+      if (autoConfirmKeyRef.current === autoConfirmKey) {
+        return;
+      }
+      autoConfirmKeyRef.current = autoConfirmKey;
+
+      void autoConfirmAndWatch(queryOrderId, queryPaymentId, queryAmount);
+    })();
   }, []);
 
   async function handleLoadOrder() {

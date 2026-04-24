@@ -3,7 +3,7 @@
     [string]$Email = "order-tester@example.com",
     [string]$Password = "Passw0rd!",
     [long]$StoreId = 3,
-    [string]$SampleDataPath = "$PSScriptRoot\..\..\Store\sample-data-aekiori-mawang.json",
+    [string]$SampleDataPath = "$PSScriptRoot\..\..\tests\Store\sample-data-aekiori-mawang.json",
     [int]$Count = 5
 )
 
@@ -150,6 +150,13 @@ $userId = [long]$claims.sub
 
 Write-Host "[OK] authenticated. userId=$userId"
 Write-Host ""
+
+if (-not (Test-Path -LiteralPath $SampleDataPath)) {
+    $legacySampleDataPath = "$PSScriptRoot\..\..\Store\sample-data-aekiori-mawang.json"
+    if ((Split-Path -Leaf $SampleDataPath) -eq "sample-data-aekiori-mawang.json" -and (Test-Path -LiteralPath $legacySampleDataPath)) {
+        $SampleDataPath = $legacySampleDataPath
+    }
+}
 
 if (-not (Test-Path -LiteralPath $SampleDataPath)) {
     Write-Host "[FAIL] sample file not found: $SampleDataPath"

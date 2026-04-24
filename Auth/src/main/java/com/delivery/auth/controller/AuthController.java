@@ -7,6 +7,9 @@ import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
 import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
 import com.delivery.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -26,15 +29,21 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Auth", description = "회원가입, 로그인, 토큰 발급 API")
 public class AuthController {
     private final AuthService authService;
 
     @GetMapping("/email/exists")
-    public ResponseEntity<EmailDuplicateCheckResultDto> checkEmailDuplicate(@RequestParam @NotBlank @Email String email) {
+    @Operation(summary = "이메일 중복 확인", description = "가입 가능한 이메일인지 확인한다.")
+    public ResponseEntity<EmailDuplicateCheckResultDto> checkEmailDuplicate(
+        @Parameter(description = "중복 확인할 이메일", required = true, example = "order-tester@example.com")
+        @RequestParam @NotBlank @Email String email
+    ) {
         return ResponseEntity.ok(authService.checkEmailDuplicate(email));
     }
 
     @PostMapping("/signup")
+    @Operation(summary = "회원가입", description = "새 계정을 만들고 access/refresh token을 발급한다.")
     public ResponseEntity<AuthTokenResponseDto> signup(
         @Valid @RequestBody SignupRequestDto request,
         HttpServletRequest httpServletRequest
@@ -44,6 +53,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인하고 access/refresh token을 발급한다.")
     public ResponseEntity<AuthTokenResponseDto> login(
         @Valid @RequestBody LoginRequestDto request,
         HttpServletRequest httpServletRequest
@@ -52,11 +62,13 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "토큰 재발급", description = "refresh token으로 새로운 access/refresh token을 발급한다.")
     public ResponseEntity<AuthTokenResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "refresh token을 무효화한다.")
     public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequestDto request) {
         authService.logout(request);
 
