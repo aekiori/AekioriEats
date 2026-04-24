@@ -1,9 +1,12 @@
 package com.delivery.order.service.event;
 
 import com.delivery.order.constant.OrderEventType;
+import com.delivery.order.constant.OrderStatusChangeReason;
 import com.delivery.order.domain.order.Order;
+import com.delivery.order.domain.order.OrderStatusHistory;
 import com.delivery.order.dto.event.PaymentResultEventDto;
 import com.delivery.order.repository.order.OrderRepository;
+import com.delivery.order.service.order.RecordOrderStatusHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class PaymentResultService {
     private final OrderRepository orderRepository;
+    private final RecordOrderStatusHistoryService recordOrderStatusHistoryService;
 
     @Transactional
     public void handle(PaymentResultEventDto event) {
@@ -65,8 +69,18 @@ public class PaymentResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.PAID, "Payment succeeded.");
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = OrderStatusChangeReason.PAYMENT_SUCCEEDED;
+        order.updateStatus(Order.Status.PAID, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.PAID,
+            reason,
+            OrderStatusHistory.SourceType.PAYMENT_EVENT,
+            event.eventId()
+        );
 
         log.info(
             "Order status changed by payment succeeded. eventId={}, orderId={}, paymentId={}, status=PAYMENT_PENDING->PAID",
@@ -97,8 +111,18 @@ public class PaymentResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.FAILED, buildFailedReason(event));
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = buildFailedReason(event);
+        order.updateStatus(Order.Status.FAILED, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.FAILED,
+            reason,
+            OrderStatusHistory.SourceType.PAYMENT_EVENT,
+            event.eventId()
+        );
 
         log.info(
             "Order status changed by payment failed. eventId={}, orderId={}, paymentId={}, status=PAYMENT_PENDING->FAILED",
@@ -110,7 +134,7 @@ public class PaymentResultService {
 
     private String buildFailedReason(PaymentResultEventDto event) {
         if (event.failReason() == null || event.failReason().isBlank()) {
-            return "Payment failed.";
+            return OrderStatusChangeReason.PAYMENT_FAILED;
         }
 
         return event.failReason();
@@ -137,8 +161,18 @@ public class PaymentResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.REFUNDED, buildRefundReason(event));
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = buildRefundReason(event);
+        order.updateStatus(Order.Status.REFUNDED, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.REFUNDED,
+            reason,
+            OrderStatusHistory.SourceType.PAYMENT_EVENT,
+            event.eventId()
+        );
 
         log.info(
             "Order status changed by payment refunded. eventId={}, orderId={}, paymentId={}, status=REFUND_PENDING->REFUNDED",
@@ -150,7 +184,7 @@ public class PaymentResultService {
 
     private String buildRefundReason(PaymentResultEventDto event) {
         if (event.failReason() == null || event.failReason().isBlank()) {
-            return "Payment refunded.";
+            return OrderStatusChangeReason.PAYMENT_REFUNDED;
         }
 
         return event.failReason();

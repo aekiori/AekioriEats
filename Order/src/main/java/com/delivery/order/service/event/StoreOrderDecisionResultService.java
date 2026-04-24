@@ -1,9 +1,12 @@
 package com.delivery.order.service.event;
 
 import com.delivery.order.constant.OrderEventType;
+import com.delivery.order.constant.OrderStatusChangeReason;
 import com.delivery.order.domain.order.Order;
+import com.delivery.order.domain.order.OrderStatusHistory;
 import com.delivery.order.dto.event.StoreOrderDecisionEventDto;
 import com.delivery.order.repository.order.OrderRepository;
+import com.delivery.order.service.order.RecordOrderStatusHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class StoreOrderDecisionResultService {
     private final OrderRepository orderRepository;
+    private final RecordOrderStatusHistoryService recordOrderStatusHistoryService;
 
     @Transactional
     public void handle(StoreOrderDecisionEventDto event) {
@@ -66,8 +70,18 @@ public class StoreOrderDecisionResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.ACCEPTED, "Store accepted the paid order.");
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = OrderStatusChangeReason.STORE_ACCEPTED_PAID_ORDER;
+        order.updateStatus(Order.Status.ACCEPTED, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.ACCEPTED,
+            reason,
+            OrderStatusHistory.SourceType.STORE_DECISION_EVENT,
+            event.eventId()
+        );
         log.info("Order status changed by store decision. eventId={}, orderId={}, status=PAID->ACCEPTED", event.eventId(), event.orderId());
     }
 
@@ -87,14 +101,24 @@ public class StoreOrderDecisionResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.REFUND_PENDING, buildRejectedReason(event));
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = buildRejectedReason(event);
+        order.updateStatus(Order.Status.REFUND_PENDING, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.REFUND_PENDING,
+            reason,
+            OrderStatusHistory.SourceType.STORE_DECISION_EVENT,
+            event.eventId()
+        );
         log.info("Order status changed by store decision. eventId={}, orderId={}, status=PAID->REFUND_PENDING", event.eventId(), event.orderId());
     }
 
     private String buildRejectedReason(StoreOrderDecisionEventDto event) {
         if (event.rejectReason() == null || event.rejectReason().isBlank()) {
-            return "Store rejected the paid order.";
+            return OrderStatusChangeReason.STORE_REJECTED_PAID_ORDER;
         }
         return event.rejectReason();
     }

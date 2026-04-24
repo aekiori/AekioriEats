@@ -1,9 +1,12 @@
 package com.delivery.order.service.event;
 
 import com.delivery.order.constant.OrderEventType;
+import com.delivery.order.constant.OrderStatusChangeReason;
 import com.delivery.order.domain.order.Order;
+import com.delivery.order.domain.order.OrderStatusHistory;
 import com.delivery.order.dto.event.StoreOrderValidationEventDto;
 import com.delivery.order.repository.order.OrderRepository;
+import com.delivery.order.service.order.RecordOrderStatusHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class StoreOrderValidationResultService {
     private final OrderRepository orderRepository;
+    private final RecordOrderStatusHistoryService recordOrderStatusHistoryService;
 
     @Transactional
     public void handle(StoreOrderValidationEventDto event) {
@@ -72,8 +76,18 @@ public class StoreOrderValidationResultService {
             return;
         }
 
-        order.updateStatus(Order.Status.PAYMENT_PENDING, "Store validation passed.");
-        orderRepository.save(order);
+        Order.Status currentStatus = order.getStatus();
+        String reason = OrderStatusChangeReason.STORE_VALIDATION_PASSED;
+        order.updateStatus(Order.Status.PAYMENT_PENDING, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.PAYMENT_PENDING,
+            reason,
+            OrderStatusHistory.SourceType.STORE_VALIDATION_EVENT,
+            event.eventId()
+        );
 
         log.info(
             "Order status changed by store validation. eventId={}, orderId={}, status=PENDING->PAYMENT_PENDING",
@@ -104,8 +118,17 @@ public class StoreOrderValidationResultService {
         }
 
         String reason = buildRejectedReason(event);
+        Order.Status currentStatus = order.getStatus();
         order.updateStatus(Order.Status.FAILED, reason);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            Order.Status.FAILED,
+            reason,
+            OrderStatusHistory.SourceType.STORE_VALIDATION_EVENT,
+            event.eventId()
+        );
 
         log.info(
             "Order status changed by store rejection. eventId={}, orderId={}, status={} -> FAILED, rejectCode={}",
@@ -118,7 +141,7 @@ public class StoreOrderValidationResultService {
 
     private String buildRejectedReason(StoreOrderValidationEventDto event) {
         if (event.rejectCode() == null && event.rejectReason() == null) {
-            return "Store validation rejected the order.";
+            return OrderStatusChangeReason.STORE_VALIDATION_REJECTED;
         }
 
         if (event.rejectCode() == null) {
