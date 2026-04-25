@@ -60,12 +60,7 @@ public class OrderRefundPendingEventHandler {
         );
 
         payment.refund(refundReason);
-        outboxRepository.save(PaymentResultOutboxEvent.refunded(
-            payment.getOrderId(),
-            payment.getId(),
-            payment.getAmount(),
-            refundReason
-        ));
+        publishPaymentRefundedEvent(payment, refundReason);
 
         log.info(
             "Payment refunded by store rejection. eventId={}, orderId={}, paymentId={}, providerPaymentId={}, cancellationId={}, amount={}",
@@ -84,5 +79,14 @@ public class OrderRefundPendingEventHandler {
         }
 
         return event.reason();
+    }
+
+    private void publishPaymentRefundedEvent(Payment payment, String refundReason) {
+        outboxRepository.save(PaymentResultOutboxEvent.refunded(
+            payment.getOrderId(),
+            payment.getId(),
+            payment.getAmount(),
+            refundReason
+        ));
     }
 }

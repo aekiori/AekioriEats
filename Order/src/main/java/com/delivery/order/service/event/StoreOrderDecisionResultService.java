@@ -70,18 +70,8 @@ public class StoreOrderDecisionResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = OrderStatusChangeReason.STORE_ACCEPTED_PAID_ORDER;
-        order.updateStatus(Order.Status.ACCEPTED, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.ACCEPTED,
-            reason,
-            OrderStatusHistory.SourceType.STORE_DECISION_EVENT,
-            event.eventId()
-        );
+        changeStatusByStoreDecisionEvent(order, Order.Status.ACCEPTED, reason, event.eventId());
         log.info("Order status changed by store decision. eventId={}, orderId={}, status=PAID->ACCEPTED", event.eventId(), event.orderId());
     }
 
@@ -101,19 +91,28 @@ public class StoreOrderDecisionResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = buildRejectedReason(event);
-        order.updateStatus(Order.Status.REFUND_PENDING, reason);
+        changeStatusByStoreDecisionEvent(order, Order.Status.REFUND_PENDING, reason, event.eventId());
+        log.info("Order status changed by store decision. eventId={}, orderId={}, status=PAID->REFUND_PENDING", event.eventId(), event.orderId());
+    }
+
+    private void changeStatusByStoreDecisionEvent(
+        Order order,
+        Order.Status targetStatus,
+        String reason,
+        String eventId
+    ) {
+        Order.Status currentStatus = order.getStatus();
+        order.updateStatus(targetStatus, reason);
         Order savedOrder = orderRepository.save(order);
         recordOrderStatusHistoryService.record(
             savedOrder,
             currentStatus,
-            Order.Status.REFUND_PENDING,
+            targetStatus,
             reason,
             OrderStatusHistory.SourceType.STORE_DECISION_EVENT,
-            event.eventId()
+            eventId
         );
-        log.info("Order status changed by store decision. eventId={}, orderId={}, status=PAID->REFUND_PENDING", event.eventId(), event.orderId());
     }
 
     private String buildRejectedReason(StoreOrderDecisionEventDto event) {

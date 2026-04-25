@@ -43,14 +43,18 @@ public class PointService {
             .orElseGet(() -> pointBalanceRepository.save(PointBalance.zero(userId)));
 
         balance.charge(request.amount());
+        recordPointCharge(userId, request);
+
+        return new PointBalanceResponse(userId, balance.getBalance());
+    }
+
+    private void recordPointCharge(Long userId, ChargePointRequest request) {
         pointLedgerRepository.save(PointLedger.charged(
             userId,
             request.amount(),
             "point-charge:" + UUID.randomUUID(),
             request.reason()
         ));
-
-        return new PointBalanceResponse(userId, balance.getBalance());
     }
 
     private void validateUserId(Long userId) {

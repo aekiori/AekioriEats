@@ -28,12 +28,19 @@ public class PaymentRequestedEventHandler {
         Payment payment = paymentRepository.save(Payment.requested(event));
 
         if (event.usedPointAmount() != null && event.usedPointAmount() > 0) {
-            outboxRepository.save(pointDeductionRequestedOutboxFactory.create(
-                event.orderId(),
-                payment.getId(),
-                event.userId(),
-                event.usedPointAmount()
-            ));
+            publishPointDeductionRequestedEvent(event, payment);
         }
+    }
+
+    private void publishPointDeductionRequestedEvent(
+        PaymentRequestedEventDto event,
+        Payment payment
+    ) {
+        outboxRepository.save(pointDeductionRequestedOutboxFactory.create(
+            event.orderId(),
+            payment.getId(),
+            event.userId(),
+            event.usedPointAmount()
+        ));
     }
 }

@@ -1,16 +1,12 @@
 package com.delivery.order.service.outbox;
 
+import com.delivery.order.service.event.KafkaEventExtractor;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.header.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-
-import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -18,7 +14,7 @@ public class OutboxPublishStatusConsumer {
     private static final Logger log = LoggerFactory.getLogger(OutboxPublishStatusConsumer.class);
 
     private final OutboxStatusService outboxStatusService;
-    private final ObjectMapper objectMapper;
+    private final KafkaEventExtractor kafkaEventExtractor;
 
     @KafkaListener(
         topics = {
@@ -66,87 +62,7 @@ public class OutboxPublishStatusConsumer {
     }
 
     private String extractEventId(ConsumerRecord<String, String> record) throws Exception {
-        Header customEventIdHeader = findHeader(record, "eventId");
-
-        if (customEventIdHeader != null) {
-            return new String(customEventIdHeader.value(), StandardCharsets.UTF_8);
-        }
-
-        Header eventIdHeader = findHeader(record, "id");
-
-        if (eventIdHeader != null) {
-            return new String(eventIdHeader.value(), StandardCharsets.UTF_8);
-        }
-
-        JsonNode root = objectMapper.readTree(record.value());
-
-        String eventIdFromDebeziumEnvelope = extractEventIdFromDebeziumEnvelope(root);
-
-        if (eventIdFromDebeziumEnvelope != null) {
-            return eventIdFromDebeziumEnvelope;
-        }
-
-        return extractEventIdFromSmtPayload(root);
-    }
-
-    private String extractEventIdFromDebeziumEnvelope(JsonNode root) {
-        JsonNode after = root.path("payload").path("after");
-
-        if (after.isMissingNode() || after.isNull()) {
-            return null;
-        }
-
-        String status = textValue(after, "status");
-
-        if (!"INIT".equals(status)) {
-            return null;
-        }
-
-        return textValue(after, "event_id");
-    }
-
-    private String extractEventIdFromSmtPayload(JsonNode root) throws Exception {
-        String directEventId = textValue(root, "eventId");
-
-        if (directEventId != null) {
-            return directEventId;
-        }
-
-        JsonNode payloadNode = root.path("payload");
-
-        if (payloadNode.isMissingNode() || payloadNode.isNull()) {
-            return null;
-        }
-
-        JsonNode eventPayloadNode = payloadNode;
-
-        if (payloadNode.isTextual()) {
-            eventPayloadNode = objectMapper.readTree(payloadNode.asText());
-        }
-
-        return textValue(eventPayloadNode, "eventId");
-    }
-
-    private Header findHeader(ConsumerRecord<String, String> record, String headerName) {
-        Header matchedHeader = null;
-
-        for (Header header : record.headers()) {
-            if (headerName.equals(header.key())) {
-                matchedHeader = header;
-            }
-        }
-
-        return matchedHeader;
-    }
-
-    private String textValue(JsonNode node, String fieldName) {
-        JsonNode valueNode = node.path(fieldName);
-
-        if (valueNode.isMissingNode() || valueNode.isNull()) {
-            return null;
-        }
-
-        return valueNode.asText();
+        return kafkaEventExtractor.extractOutboxEventId(record);
     }
 }
 

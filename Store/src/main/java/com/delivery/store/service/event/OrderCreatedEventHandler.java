@@ -18,6 +18,13 @@ public class OrderCreatedEventHandler {
         StoreOrderValidationResult result = storeOrderableValidator.validate(event);
         storeOrderValidationHistoryService.save(event, result);
 
+        publishStoreOrderValidationResult(event, result);
+    }
+
+    private void publishStoreOrderValidationResult(
+        OrderCreatedEventDto event,
+        StoreOrderValidationResult result
+    ) {
         if (result.accepted()) {
             outboxRepository.save(StoreOrderValidationOutboxEvent.accepted(event.orderId(), event.storeId()));
             return;

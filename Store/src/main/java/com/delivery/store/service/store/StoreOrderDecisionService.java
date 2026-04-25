@@ -75,19 +75,28 @@ public class StoreOrderDecisionService {
         }
 
         LocalDateTime decidedAt = LocalDateTime.now();
-        Outbox outbox;
-        if (request.decision() == DecideStoreOrderRequest.Decision.ACCEPTED) {
-            storeOrder.accept(decidedAt);
-            outbox = StoreOrderDecisionOutboxEvent.accepted(orderId, storeId);
-        } else {
-            String rejectReason = normalizeRejectReason(request.rejectReason());
-            storeOrder.reject(rejectReason, decidedAt);
-            outbox = StoreOrderDecisionOutboxEvent.rejected(orderId, storeId, rejectReason);
-        }
+        Outbox outbox = decideStoreOrder(storeOrder, request, storeId, orderId, decidedAt);
 
         storeOrderRepository.save(storeOrder);
         outboxRepository.save(outbox);
         return StoreOrderDecisionResultDto.from(storeOrder);
+    }
+
+    private Outbox decideStoreOrder(
+        StoreOrder storeOrder,
+        DecideStoreOrderRequest request,
+        Long storeId,
+        Long orderId,
+        LocalDateTime decidedAt
+    ) {
+        if (request.decision() == DecideStoreOrderRequest.Decision.ACCEPTED) {
+            storeOrder.accept(decidedAt);
+            return StoreOrderDecisionOutboxEvent.accepted(orderId, storeId);
+        }
+
+        String rejectReason = normalizeRejectReason(request.rejectReason());
+        storeOrder.reject(rejectReason, decidedAt);
+        return StoreOrderDecisionOutboxEvent.rejected(orderId, storeId, rejectReason);
     }
 
     private String normalizeRejectReason(String rejectReason) {

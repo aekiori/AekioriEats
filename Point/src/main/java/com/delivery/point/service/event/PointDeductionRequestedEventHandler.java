@@ -42,6 +42,10 @@ public class PointDeductionRequestedEventHandler {
         }
 
         balance.deduct(event.amount());
+        saveSucceeded(event, idempotencyKey);
+    }
+
+    private void saveSucceeded(PointDeductionRequestedEventDto event, String idempotencyKey) {
         pointLedgerRepository.save(PointLedger.deductionSucceeded(
             event.userId(),
             event.orderId(),
@@ -57,10 +61,11 @@ public class PointDeductionRequestedEventHandler {
     }
 
     private void saveFailed(PointDeductionRequestedEventDto event, String idempotencyKey, String reason) {
+        int failedAmount = failedAmount(event);
         pointLedgerRepository.save(PointLedger.deductionFailed(
             event.userId(),
             event.orderId(),
-            event.amount() == null ? 0 : event.amount(),
+            failedAmount,
             idempotencyKey,
             reason
         ));
@@ -68,8 +73,12 @@ public class PointDeductionRequestedEventHandler {
             event.orderId(),
             event.paymentId(),
             event.userId(),
-            event.amount() == null ? 0 : event.amount(),
+            failedAmount,
             reason
         ));
+    }
+
+    private int failedAmount(PointDeductionRequestedEventDto event) {
+        return event.amount() == null ? 0 : event.amount();
     }
 }

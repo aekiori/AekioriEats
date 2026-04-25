@@ -65,6 +65,12 @@ public class ConfirmPaymentService {
         }
 
         payment.confirmSucceeded(request.paymentId());
+        publishPaymentSucceededEvent(payment);
+
+        return toResponse(payment, request.paymentId(), providerVerified);
+    }
+
+    private void publishPaymentSucceededEvent(Payment payment) {
         outboxRepository.save(
             PaymentResultOutboxEvent.succeeded(
                 payment.getOrderId(),
@@ -73,8 +79,6 @@ public class ConfirmPaymentService {
                 0
             )
         );
-
-        return toResponse(payment, request.paymentId(), providerVerified);
     }
 
     private void validateRequest(ConfirmPaymentRequest request) {

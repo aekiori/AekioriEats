@@ -119,15 +119,7 @@ public class CreateOrderService {
             return resolveExistingOrderAfterDuplicateKey(idempotencyKey, requestHash, exception);
         }
 
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            null,
-            Order.Status.PENDING,
-            OrderStatusChangeReason.ORDER_CREATED,
-            OrderStatusHistory.SourceType.ORDER_CREATED,
-            null
-        );
-
+        recordOrderCreatedHistory(savedOrder);
         List<OrderItem> orderItems = saveOrderItems(savedOrder, request.items());
         savedOrder.registerCreatedEvent(orderItems);
         orderRepository.save(savedOrder);
@@ -235,6 +227,17 @@ public class CreateOrderService {
         return orderRepository.save(order);
     }
 
+    private void recordOrderCreatedHistory(Order savedOrder) {
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            null,
+            Order.Status.PENDING,
+            OrderStatusChangeReason.ORDER_CREATED,
+            OrderStatusHistory.SourceType.ORDER_CREATED,
+            null
+        );
+    }
+
     private String normalizeIdempotencyKey(String idempotencyKey) {
         return idempotencyKey.trim();
     }
@@ -246,16 +249,15 @@ public class CreateOrderService {
             payload.put("storeId", request.storeId());
             payload.put("deliveryAddress", request.deliveryAddress());
             payload.put("usedPointAmount", request.usedPointAmount());
-            payload.put("items", request.items().stream()
-                .map(item -> {
+            payload.put("items",
+                request.items().stream().map(item -> {
                     Map<String, Object> itemMap = new LinkedHashMap<>();
                     itemMap.put("menuId", item.menuId());
                     itemMap.put("menuName", item.menuName());
                     itemMap.put("unitPrice", item.unitPrice());
                     itemMap.put("quantity", item.quantity());
                     return itemMap;
-                })
-                .toList());
+                }).toList());
 
             String json = objectMapper.writeValueAsString(payload);
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");

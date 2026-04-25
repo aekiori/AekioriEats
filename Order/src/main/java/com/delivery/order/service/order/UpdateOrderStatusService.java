@@ -58,6 +58,22 @@ public class UpdateOrderStatusService {
             orderId, currentStatus, targetStatus
         );
 
+        Order savedOrder = changeStatusByApi(order, currentStatus, targetStatus, reason);
+
+        log.info(
+            "Order status update completed. orderId={}, currentStatus={}, targetStatus={}",
+            orderId, currentStatus, targetStatus
+        );
+
+        return UpdateOrderStatusResultDto.from(savedOrder);
+    }
+
+    private Order changeStatusByApi(
+        Order order,
+        Order.Status currentStatus,
+        Order.Status targetStatus,
+        String reason
+    ) {
         order.updateStatus(targetStatus, reason);
         Order savedOrder = orderRepository.save(order);
         recordOrderStatusHistoryService.record(
@@ -68,12 +84,6 @@ public class UpdateOrderStatusService {
             OrderStatusHistory.SourceType.API,
             null
         );
-
-        log.info(
-            "Order status update completed. orderId={}, currentStatus={}, targetStatus={}",
-            orderId, currentStatus, targetStatus
-        );
-
-        return UpdateOrderStatusResultDto.from(savedOrder);
+        return savedOrder;
     }
 }

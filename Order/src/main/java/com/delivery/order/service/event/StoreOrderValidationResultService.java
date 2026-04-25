@@ -76,18 +76,8 @@ public class StoreOrderValidationResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = OrderStatusChangeReason.STORE_VALIDATION_PASSED;
-        order.updateStatus(Order.Status.PAYMENT_PENDING, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.PAYMENT_PENDING,
-            reason,
-            OrderStatusHistory.SourceType.STORE_VALIDATION_EVENT,
-            event.eventId()
-        );
+        changeStatusByStoreValidationEvent(order, Order.Status.PAYMENT_PENDING, reason, event.eventId());
 
         log.info(
             "Order status changed by store validation. eventId={}, orderId={}, status=PENDING->PAYMENT_PENDING",
@@ -118,17 +108,7 @@ public class StoreOrderValidationResultService {
         }
 
         String reason = buildRejectedReason(event);
-        Order.Status currentStatus = order.getStatus();
-        order.updateStatus(Order.Status.FAILED, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.FAILED,
-            reason,
-            OrderStatusHistory.SourceType.STORE_VALIDATION_EVENT,
-            event.eventId()
-        );
+        changeStatusByStoreValidationEvent(order, Order.Status.FAILED, reason, event.eventId());
 
         log.info(
             "Order status changed by store rejection. eventId={}, orderId={}, status={} -> FAILED, rejectCode={}",
@@ -136,6 +116,25 @@ public class StoreOrderValidationResultService {
             event.orderId(),
             event.validationResult(),
             event.rejectCode()
+        );
+    }
+
+    private void changeStatusByStoreValidationEvent(
+        Order order,
+        Order.Status targetStatus,
+        String reason,
+        String eventId
+    ) {
+        Order.Status currentStatus = order.getStatus();
+        order.updateStatus(targetStatus, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            targetStatus,
+            reason,
+            OrderStatusHistory.SourceType.STORE_VALIDATION_EVENT,
+            eventId
         );
     }
 

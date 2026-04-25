@@ -69,18 +69,8 @@ public class PaymentResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = OrderStatusChangeReason.PAYMENT_SUCCEEDED;
-        order.updateStatus(Order.Status.PAID, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.PAID,
-            reason,
-            OrderStatusHistory.SourceType.PAYMENT_EVENT,
-            event.eventId()
-        );
+        changeStatusByPaymentEvent(order, Order.Status.PAID, reason, event.eventId());
 
         log.info(
             "Order status changed by payment succeeded. eventId={}, orderId={}, paymentId={}, status=PAYMENT_PENDING->PAID",
@@ -111,18 +101,8 @@ public class PaymentResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = buildFailedReason(event);
-        order.updateStatus(Order.Status.FAILED, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.FAILED,
-            reason,
-            OrderStatusHistory.SourceType.PAYMENT_EVENT,
-            event.eventId()
-        );
+        changeStatusByPaymentEvent(order, Order.Status.FAILED, reason, event.eventId());
 
         log.info(
             "Order status changed by payment failed. eventId={}, orderId={}, paymentId={}, status=PAYMENT_PENDING->FAILED",
@@ -161,24 +141,33 @@ public class PaymentResultService {
             return;
         }
 
-        Order.Status currentStatus = order.getStatus();
         String reason = buildRefundReason(event);
-        order.updateStatus(Order.Status.REFUNDED, reason);
-        Order savedOrder = orderRepository.save(order);
-        recordOrderStatusHistoryService.record(
-            savedOrder,
-            currentStatus,
-            Order.Status.REFUNDED,
-            reason,
-            OrderStatusHistory.SourceType.PAYMENT_EVENT,
-            event.eventId()
-        );
+        changeStatusByPaymentEvent(order, Order.Status.REFUNDED, reason, event.eventId());
 
         log.info(
             "Order status changed by payment refunded. eventId={}, orderId={}, paymentId={}, status=REFUND_PENDING->REFUNDED",
             event.eventId(),
             event.orderId(),
             event.paymentId()
+        );
+    }
+
+    private void changeStatusByPaymentEvent(
+        Order order,
+        Order.Status targetStatus,
+        String reason,
+        String eventId
+    ) {
+        Order.Status currentStatus = order.getStatus();
+        order.updateStatus(targetStatus, reason);
+        Order savedOrder = orderRepository.save(order);
+        recordOrderStatusHistoryService.record(
+            savedOrder,
+            currentStatus,
+            targetStatus,
+            reason,
+            OrderStatusHistory.SourceType.PAYMENT_EVENT,
+            eventId
         );
     }
 

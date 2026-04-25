@@ -23,27 +23,42 @@ public class StoreOrderValidationHistoryService {
         LocalDateTime validatedAt = LocalDateTime.now();
 
         if (history == null) {
-            if (result.accepted()) {
-                history = StoreOrderValidation.createAccepted(event.orderId(), event.storeId(), validatedAt);
-            } else {
-                history = StoreOrderValidation.createRejected(
-                    event.orderId(),
-                    event.storeId(),
-                    result.code(),
-                    result.message(),
-                    validatedAt
-                );
-            }
-
-            return storeOrderValidationRepository.save(history);
+            return storeOrderValidationRepository.save(createHistory(event, result, validatedAt));
         }
 
-        if (result.accepted()) {
-            history.markAccepted(validatedAt);
-        } else {
-            history.markRejected(result.code(), result.message(), validatedAt);
-        }
+        updateHistory(history, result, validatedAt);
 
         return history;
+    }
+
+    private StoreOrderValidation createHistory(
+        OrderCreatedEventDto event,
+        StoreOrderValidationResult result,
+        LocalDateTime validatedAt
+    ) {
+        if (result.accepted()) {
+            return StoreOrderValidation.createAccepted(event.orderId(), event.storeId(), validatedAt);
+        }
+
+        return StoreOrderValidation.createRejected(
+            event.orderId(),
+            event.storeId(),
+            result.code(),
+            result.message(),
+            validatedAt
+        );
+    }
+
+    private void updateHistory(
+        StoreOrderValidation history,
+        StoreOrderValidationResult result,
+        LocalDateTime validatedAt
+    ) {
+        if (result.accepted()) {
+            history.markAccepted(validatedAt);
+            return;
+        }
+
+        history.markRejected(result.code(), result.message(), validatedAt);
     }
 }
