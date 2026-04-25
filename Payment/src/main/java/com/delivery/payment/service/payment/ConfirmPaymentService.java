@@ -1,8 +1,8 @@
 package com.delivery.payment.service.payment;
 
 import com.delivery.payment.domain.payment.Payment;
-import com.delivery.payment.dto.request.ConfirmPaymentRequest;
-import com.delivery.payment.dto.response.ConfirmPaymentResponse;
+import com.delivery.payment.dto.request.ConfirmPaymentRequestDto;
+import com.delivery.payment.dto.response.ConfirmPaymentResponseDto;
 import com.delivery.payment.infra.portone.PortOnePaymentClient;
 import com.delivery.payment.infra.portone.PortOnePaymentVerification;
 import com.delivery.payment.repository.outbox.OutboxRepository;
@@ -25,7 +25,7 @@ public class ConfirmPaymentService {
     private final PaymentAuthorizationService paymentAuthorizationService;
 
     @Transactional
-    public ConfirmPaymentResponse confirm(ConfirmPaymentRequest request, long authenticatedUserId) {
+    public ConfirmPaymentResponseDto confirm(ConfirmPaymentRequestDto request, long authenticatedUserId) {
         validateRequest(request);
 
         Payment payment = paymentRepository.findByOrderId(request.orderId())
@@ -39,7 +39,7 @@ public class ConfirmPaymentService {
         log.info("payment confirm {}", payment);
 
         if (!request.amount().equals(payment.getAmount())) {
-            log.info("콘푸로스트");
+            log.info("Payment amount mismatch. requestAmount={}, paymentAmount={}", request.amount(), payment.getAmount());
             throw new ResponseStatusException(
                 HttpStatus.CONFLICT,
                 "Payment amount does not match order amount."
@@ -81,7 +81,7 @@ public class ConfirmPaymentService {
         );
     }
 
-    private void validateRequest(ConfirmPaymentRequest request) {
+    private void validateRequest(ConfirmPaymentRequestDto request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
         }
@@ -98,7 +98,7 @@ public class ConfirmPaymentService {
 
     private void validateProviderPayment(
         PortOnePaymentVerification verification,
-        ConfirmPaymentRequest request
+        ConfirmPaymentRequestDto request
     ) {
         if (verification == null) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "PortOne payment response is empty.");
@@ -117,7 +117,7 @@ public class ConfirmPaymentService {
         }
     }
 
-    private ConfirmPaymentResponse toResponse(
+    private ConfirmPaymentResponseDto toResponse(
         Payment payment,
         String fallbackProviderPaymentId,
         boolean providerVerified
@@ -126,7 +126,7 @@ public class ConfirmPaymentService {
             ? payment.getPgTransactionId()
             : fallbackProviderPaymentId;
 
-        return new ConfirmPaymentResponse(
+        return new ConfirmPaymentResponseDto(
             payment.getOrderId(),
             payment.getId(),
             providerPaymentId,

@@ -2,14 +2,14 @@ package com.delivery.store.controller.menu;
 
 import com.delivery.store.auth.AuthenticatedUser;
 import com.delivery.store.auth.AuthenticatedUserInfo;
-import com.delivery.store.dto.request.owner.CreateMenuGroupRequest;
-import com.delivery.store.dto.request.owner.CreateMenuRequest;
-import com.delivery.store.dto.request.owner.ReplaceMenuTagsRequest;
-import com.delivery.store.dto.request.owner.UpdateMenuGroupRequest;
-import com.delivery.store.dto.request.owner.UpdateMenuRequest;
-import com.delivery.store.dto.response.MenuGroupResultDto;
-import com.delivery.store.dto.response.MenuResultDto;
-import com.delivery.store.dto.response.ReplaceMenuTagsResultDto;
+import com.delivery.store.dto.request.owner.CreateMenuGroupRequestDto;
+import com.delivery.store.dto.request.owner.CreateMenuRequestDto;
+import com.delivery.store.dto.request.owner.ReplaceMenuTagsRequestDto;
+import com.delivery.store.dto.request.owner.UpdateMenuGroupRequestDto;
+import com.delivery.store.dto.request.owner.UpdateMenuRequestDto;
+import com.delivery.store.dto.response.MenuGroupResponseDto;
+import com.delivery.store.dto.response.MenuResponseDto;
+import com.delivery.store.dto.response.ReplaceMenuTagsResponseDto;
 import com.delivery.store.service.menu.MenuService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,9 +35,9 @@ public class OwnerMenuController {
     private final MenuService menuService;
 
     @PostMapping("/menu-groups")
-    public ResponseEntity<MenuGroupResultDto> createMenuGroup(
+    public ResponseEntity<MenuGroupResponseDto> createMenuGroup(
         @PathVariable Long storeId,
-        @Valid @RequestBody CreateMenuGroupRequest request,
+        @Valid @RequestBody CreateMenuGroupRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -51,10 +51,10 @@ public class OwnerMenuController {
     }
 
     @PutMapping("/menu-groups/{menuGroupId}")
-    public ResponseEntity<MenuGroupResultDto> updateMenuGroup(
+    public ResponseEntity<MenuGroupResponseDto> updateMenuGroup(
         @PathVariable Long storeId,
         @PathVariable Long menuGroupId,
-        @Valid @RequestBody UpdateMenuGroupRequest request,
+        @Valid @RequestBody UpdateMenuGroupRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -86,9 +86,9 @@ public class OwnerMenuController {
     }
 
     @PostMapping("/menus")
-    public ResponseEntity<MenuResultDto> createMenu(
+    public ResponseEntity<MenuResponseDto> createMenu(
         @PathVariable Long storeId,
-        @Valid @RequestBody CreateMenuRequest request,
+        @Valid @RequestBody CreateMenuRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -102,10 +102,10 @@ public class OwnerMenuController {
     }
 
     @PutMapping("/menus/{menuId}")
-    public ResponseEntity<MenuResultDto> updateMenu(
+    public ResponseEntity<MenuResponseDto> updateMenu(
         @PathVariable Long storeId,
         @PathVariable Long menuId,
-        @Valid @RequestBody UpdateMenuRequest request,
+        @Valid @RequestBody UpdateMenuRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -132,10 +132,10 @@ public class OwnerMenuController {
     }
 
     @PutMapping("/menus/{menuId}/tags")
-    public ResponseEntity<ReplaceMenuTagsResultDto> replaceMenuTags(
+    public ResponseEntity<ReplaceMenuTagsResponseDto> replaceMenuTags(
         @PathVariable Long storeId,
         @PathVariable Long menuId,
-        @Valid @RequestBody ReplaceMenuTagsRequest request,
+        @Valid @RequestBody ReplaceMenuTagsRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {

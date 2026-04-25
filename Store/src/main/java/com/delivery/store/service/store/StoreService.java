@@ -5,13 +5,13 @@ import com.delivery.store.domain.menu.Menu;
 import com.delivery.store.domain.option.MenuOptionGroup;
 import com.delivery.store.domain.store.Store;
 import com.delivery.store.domain.store.StoreCategory;
-import com.delivery.store.dto.request.UpdateStoreStatusDto;
-import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
-import com.delivery.store.dto.request.owner.DeliveryPolicyRequest;
-import com.delivery.store.dto.request.owner.UpdateOwnerStoreRequest;
-import com.delivery.store.dto.response.CreateStoreResultDto;
-import com.delivery.store.dto.response.OwnerStoreSummaryResultDto;
-import com.delivery.store.dto.response.StoreDetailResultDto;
+import com.delivery.store.dto.request.UpdateStoreStatusRequestDto;
+import com.delivery.store.dto.request.owner.CreateOwnerStoreRequestDto;
+import com.delivery.store.dto.request.owner.DeliveryPolicyRequestDto;
+import com.delivery.store.dto.request.owner.UpdateOwnerStoreRequestDto;
+import com.delivery.store.dto.response.CreateStoreResponseDto;
+import com.delivery.store.dto.response.OwnerStoreSummaryResponseDto;
+import com.delivery.store.dto.response.StoreDetailResponseDto;
 import com.delivery.store.exception.ApiException;
 import com.delivery.store.repository.category.CategoryRepository;
 import com.delivery.store.repository.menu.MenuGroupRepository;
@@ -48,8 +48,8 @@ public class StoreService {
     private final MenuOptionRepository menuOptionRepository;
 
     @Transactional
-    public CreateStoreResultDto createOwnerStore(
-        CreateOwnerStoreRequest request,
+    public CreateStoreResponseDto createOwnerStore(
+        CreateOwnerStoreRequestDto request,
         long authenticatedUserId
     ) {
         Store savedStore;
@@ -72,50 +72,50 @@ public class StoreService {
 
         savedStore = storeRepository.save(savedStore);
         replaceStoreCategories(savedStore.getId(), request.categoryIds());
-        return CreateStoreResultDto.from(savedStore);
+        return CreateStoreResponseDto.from(savedStore);
     }
 
     @Transactional(readOnly = true)
-    public StoreDetailResultDto getStore(Long storeId, long authenticatedUserId) {
+    public StoreDetailResponseDto getStore(Long storeId, long authenticatedUserId) {
         Store store = storeDomainSupport.findStore(storeId);
         storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
-        return StoreDetailResultDto.from(store);
+        return StoreDetailResponseDto.from(store);
     }
 
     @Transactional(readOnly = true)
-    public List<OwnerStoreSummaryResultDto> getOwnerStores(long authenticatedUserId) {
+    public List<OwnerStoreSummaryResponseDto> getOwnerStores(long authenticatedUserId) {
         return storeRepository.findByOwnerUserIdOrderByCreatedAtDesc(authenticatedUserId)
             .stream()
-            .map(OwnerStoreSummaryResultDto::from)
+            .map(OwnerStoreSummaryResponseDto::from)
             .toList();
     }
 
     @Transactional
-    public StoreDetailResultDto updateStoreStatus(
+    public StoreDetailResponseDto updateStoreStatus(
         Long storeId,
-        UpdateStoreStatusDto request,
+        UpdateStoreStatusRequestDto request,
         long authenticatedUserId
     ) {
         Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         store.updateStatus(request.status());
-        return StoreDetailResultDto.from(storeRepository.save(store));
+        return StoreDetailResponseDto.from(storeRepository.save(store));
     }
 
     @Transactional
-    public StoreDetailResultDto replaceDeliveryPolicy(
+    public StoreDetailResponseDto replaceDeliveryPolicy(
         Long storeId,
-        DeliveryPolicyRequest request,
+        DeliveryPolicyRequestDto request,
         long authenticatedUserId
     ) {
         Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
         store.updateDeliveryPolicy(request.minOrderAmount(), request.deliveryTip());
-        return StoreDetailResultDto.from(storeRepository.save(store));
+        return StoreDetailResponseDto.from(storeRepository.save(store));
     }
 
     @Transactional
-    public StoreDetailResultDto updateOwnerStore(
+    public StoreDetailResponseDto updateOwnerStore(
         Long storeId,
-        UpdateOwnerStoreRequest request,
+        UpdateOwnerStoreRequestDto request,
         long authenticatedUserId
     ) {
         Store store = storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId);
@@ -140,7 +140,7 @@ public class StoreService {
             replaceStoreCategories(savedStore.getId(), request.categoryIds());
         }
 
-        return StoreDetailResultDto.from(savedStore);
+        return StoreDetailResponseDto.from(savedStore);
     }
 
     @Transactional

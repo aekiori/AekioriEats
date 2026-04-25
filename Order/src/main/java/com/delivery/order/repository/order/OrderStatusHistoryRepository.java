@@ -1,7 +1,7 @@
 package com.delivery.order.repository.order;
 
 import com.delivery.order.domain.order.OrderStatusHistory;
-import com.delivery.order.dto.response.OrderStatusHistoryResultDto;
+import com.delivery.order.dto.response.OrderStatusHistoryResponseDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,5 +16,5 @@ public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusH
         WHERE h.orderId = :orderId
         ORDER BY h.createdAt ASC
     """)
-    List<OrderStatusHistoryResultDto> findStatusHistoryByOrderId(@Param("orderId") Long orderId);
+    List<OrderStatusHistoryResponseDto> findStatusHistoryByOrderId(@Param("orderId") Long orderId);
 }

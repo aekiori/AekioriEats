@@ -4,13 +4,14 @@ import com.delivery.order.TestIdempotencyCacheConfig;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.domain.order.exception.InvalidOrderStatusTransitionException;
 import com.delivery.order.domain.outbox.Outbox;
-import com.delivery.order.dto.request.CreateOrderDto;
-import com.delivery.order.dto.request.CreateOrderItemDto;
-import com.delivery.order.dto.request.UpdateOrderStatusDto;
-import com.delivery.order.dto.response.CreateOrderResultDto;
-import com.delivery.order.dto.response.OrderDetailResultDto;
-import com.delivery.order.dto.response.OrderPageResultDto;
-import com.delivery.order.dto.response.UpdateOrderStatusResultDto;
+import com.delivery.order.dto.request.CreateOrderRequestDto;
+import com.delivery.order.dto.request.CreateOrderItemRequestDto;
+import com.delivery.order.dto.request.GetOrdersRequestDto;
+import com.delivery.order.dto.request.UpdateOrderStatusRequestDto;
+import com.delivery.order.dto.response.CreateOrderResponseDto;
+import com.delivery.order.dto.response.OrderDetailResponseDto;
+import com.delivery.order.dto.response.OrderPageResponseDto;
+import com.delivery.order.dto.response.UpdateOrderStatusResponseDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
@@ -19,6 +20,7 @@ import com.delivery.order.service.order.CreateOrderService;
 import com.delivery.order.service.order.GetOrderService;
 import com.delivery.order.service.order.GetOrdersService;
 import com.delivery.order.service.order.UpdateOrderStatusService;
+import com.delivery.order.service.outbox.OutboxStatusService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,18 +70,18 @@ class OrderServiceIntegrationTest {
 
     @Test
     void create_order_persists_order_items_and_order_created_outbox() {
-        CreateOrderDto request = new CreateOrderDto(
+        CreateOrderRequestDto request = new CreateOrderRequestDto(
             1L,
             100L,
-            "서울시 강남구 테헤란로 123",
+            "Seoul Gangnam 123",
             1000,
             List.of(
-                new CreateOrderItemDto(10L, "불고기버거", 8500, 2),
-                new CreateOrderItemDto(20L, "콜라", 2000, 1)
+                new CreateOrderItemRequestDto(10L, "Burger", 8500, 2),
+                new CreateOrderItemRequestDto(20L, "Cola", 2000, 1)
             )
         );
 
-        CreateOrderResultDto result = createOrderService.createOrder(request, "order-create-integration-001");
+        CreateOrderResponseDto result = createOrderService.createOrder(request, "order-create-integration-001");
 
         assertThat(result.orderId()).isNotNull();
         assertThat(result.status()).isEqualTo("PENDING");
@@ -95,7 +97,7 @@ class OrderServiceIntegrationTest {
         assertThat(orderItemRepository.findByOrderId(savedOrder.getId()))
             .hasSize(2)
             .extracting("menuName")
-            .containsExactly("불고기버거", "콜라");
+            .containsExactly("Burger", "Cola");
 
         assertThat(outboxRepository.findAll())
             .hasSize(1)
@@ -116,7 +118,7 @@ class OrderServiceIntegrationTest {
     void get_order_returns_order_detail_and_items() {
         Long orderId = createPendingOrder();
 
-        OrderDetailResultDto result = getOrderService.getOrder(orderId);
+        OrderDetailResponseDto result = getOrderService.getOrder(orderId);
 
         assertThat(result.orderId()).isEqualTo(orderId);
         assertThat(result.userId()).isEqualTo(1L);
@@ -125,7 +127,7 @@ class OrderServiceIntegrationTest {
         assertThat(result.items()).hasSize(2);
         assertThat(result.items())
             .extracting("menuName")
-            .containsExactly("불고기버거", "콜라");
+            .containsExactly("Burger", "Cola");
     }
 
     @Test
@@ -136,10 +138,13 @@ class OrderServiceIntegrationTest {
 
         updateOrderStatusService.updateOrderStatus(
             secondOrderId,
-            new UpdateOrderStatusDto(Order.Status.PAID, "payment completed")
+            new UpdateOrderStatusRequestDto(Order.Status.PAID, "payment completed")
         );
 
-        OrderPageResultDto result = getOrdersService.getOrders(1L, Order.Status.PENDING, 0, 20);
+        OrderPageResponseDto result = getOrdersService.getOrders(
+            1L,
+            new GetOrdersRequestDto(Order.Status.PENDING, 0, 20)
+        );
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().get(0).orderId()).isEqualTo(firstOrderId);
@@ -151,9 +156,9 @@ class OrderServiceIntegrationTest {
     void update_order_status_persists_order_status_changed_outbox() {
         Long orderId = createPendingOrder();
 
-        UpdateOrderStatusResultDto result = updateOrderStatusService.updateOrderStatus(
+        UpdateOrderStatusResponseDto result = updateOrderStatusService.updateOrderStatus(
             orderId,
-            new UpdateOrderStatusDto(Order.Status.PAID, "payment completed")
+            new UpdateOrderStatusRequestDto(Order.Status.PAID, "payment completed")
         );
 
         Order updatedOrder = orderRepository.findById(orderId).orElseThrow();
@@ -186,12 +191,12 @@ class OrderServiceIntegrationTest {
         Long orderId = createPendingOrder();
         updateOrderStatusService.updateOrderStatus(
             orderId,
-            new UpdateOrderStatusDto(Order.Status.PAID, "payment completed")
+            new UpdateOrderStatusRequestDto(Order.Status.PAID, "payment completed")
         );
 
         assertThatThrownBy(() -> updateOrderStatusService.updateOrderStatus(
             orderId,
-            new UpdateOrderStatusDto(Order.Status.FAILED, "invalid transition")
+            new UpdateOrderStatusRequestDto(Order.Status.FAILED, "invalid transition")
         ))
             .isInstanceOf(InvalidOrderStatusTransitionException.class)
             .hasMessageContaining("currentStatus=PAID")
@@ -205,14 +210,14 @@ class OrderServiceIntegrationTest {
 
     @Test
     void invalid_amount_rolls_back_all_persistence() {
-        CreateOrderDto request = new CreateOrderDto(
+        CreateOrderRequestDto request = new CreateOrderRequestDto(
             1L,
             100L,
-            "서울시 강남구 테헤란로 123",
+            "Seoul Gangnam 123",
             20000,
             List.of(
-                new CreateOrderItemDto(10L, "불고기버거", 8500, 2),
-                new CreateOrderItemDto(20L, "콜라", 2000, 1)
+                new CreateOrderItemRequestDto(10L, "Burger", 8500, 2),
+                new CreateOrderItemRequestDto(20L, "Cola", 2000, 1)
             )
         );
 
@@ -227,19 +232,19 @@ class OrderServiceIntegrationTest {
 
     @Test
     void same_idempotency_key_returns_existing_order_without_duplicate_outbox() {
-        CreateOrderDto request = new CreateOrderDto(
+        CreateOrderRequestDto request = new CreateOrderRequestDto(
             1L,
             100L,
-            "서울시 강남구 테헤란로 123",
+            "Seoul Gangnam 123",
             1000,
             List.of(
-                new CreateOrderItemDto(10L, "불고기버거", 8500, 2),
-                new CreateOrderItemDto(20L, "콜라", 2000, 1)
+                new CreateOrderItemRequestDto(10L, "Burger", 8500, 2),
+                new CreateOrderItemRequestDto(20L, "Cola", 2000, 1)
             )
         );
 
-        CreateOrderResultDto firstResult = createOrderService.createOrder(request, "order-create-001");
-        CreateOrderResultDto secondResult = createOrderService.createOrder(request, "order-create-001");
+        CreateOrderResponseDto firstResult = createOrderService.createOrder(request, "order-create-001");
+        CreateOrderResponseDto secondResult = createOrderService.createOrder(request, "order-create-001");
 
         assertThat(secondResult.orderId()).isEqualTo(firstResult.orderId());
         assertThat(orderRepository.findAll()).hasSize(1);
@@ -252,26 +257,26 @@ class OrderServiceIntegrationTest {
     @Test
     void conflicting_request_with_same_idempotency_key_throws_conflict() {
         createOrderService.createOrder(
-            new CreateOrderDto(
+            new CreateOrderRequestDto(
                 1L,
                 100L,
-                "서울시 강남구 테헤란로 123",
+                "Seoul Gangnam 123",
                 1000,
                 List.of(
-                    new CreateOrderItemDto(10L, "불고기버거", 8500, 2)
+                    new CreateOrderItemRequestDto(10L, "Burger", 8500, 2)
                 )
             ),
             "order-create-conflict-001"
         );
 
         assertThatThrownBy(() -> createOrderService.createOrder(
-            new CreateOrderDto(
+            new CreateOrderRequestDto(
                 1L,
                 100L,
-                "서울시 강남구 테헤란로 999",
+                "Seoul Gangnam 999",
                 1000,
                 List.of(
-                    new CreateOrderItemDto(10L, "불고기버거", 8500, 2)
+                    new CreateOrderItemRequestDto(10L, "Burger", 8500, 2)
                 )
             ),
             "order-create-conflict-001"
@@ -286,13 +291,13 @@ class OrderServiceIntegrationTest {
 
         Outbox createdOutbox = outboxRepository.findAll().get(0);
 
-        outboxStatusService.markPublished(createdOutbox.getEventId());
+        outboxStatusService.markPublishedIfInit(createdOutbox.getEventId());
         assertThat(outboxRepository.findById(createdOutbox.getId()).orElseThrow().getStatus())
             .isEqualTo(Outbox.Status.PUBLISHED);
 
         updateOrderStatusService.updateOrderStatus(
             orderId,
-            new UpdateOrderStatusDto(Order.Status.PAID, "payment completed")
+            new UpdateOrderStatusRequestDto(Order.Status.PAID, "payment completed")
         );
 
         Outbox statusChangedOutbox = outboxRepository.findAll().stream()
@@ -310,15 +315,15 @@ class OrderServiceIntegrationTest {
     }
 
     private Long createPendingOrder(Long userId, Long storeId, int usedPointAmount) {
-        CreateOrderResultDto result = createOrderService.createOrder(
-            new CreateOrderDto(
+        CreateOrderResponseDto result = createOrderService.createOrder(
+            new CreateOrderRequestDto(
                 userId,
                 storeId,
-                "서울시 강남구 테헤란로 123",
+                "Seoul Gangnam 123",
                 usedPointAmount,
                 List.of(
-                    new CreateOrderItemDto(10L, "불고기버거", 8500, 2),
-                    new CreateOrderItemDto(20L, "콜라", 2000, 1)
+                    new CreateOrderItemRequestDto(10L, "Burger", 8500, 2),
+                    new CreateOrderItemRequestDto(20L, "Cola", 2000, 1)
                 )
             ),
             "order-create-pending-" + userId + "-" + storeId + "-" + usedPointAmount

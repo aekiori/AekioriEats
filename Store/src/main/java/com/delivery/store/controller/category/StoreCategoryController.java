@@ -1,6 +1,6 @@
 package com.delivery.store.controller.category;
 
-import com.delivery.store.dto.response.query.StoreQueryDtos;
+import com.delivery.store.dto.response.query.StoreQueryResponseDto;
 import com.delivery.store.service.store.StoreQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -18,7 +18,7 @@ public class StoreCategoryController {
     private final StoreQueryService storeQueryService;
 
     @GetMapping
-    public List<StoreQueryDtos.CategoryDto> getCategories() {
+    public List<StoreQueryResponseDto.CategoryDto> getCategories() {
         return storeQueryService.getCategories();
     }
 }

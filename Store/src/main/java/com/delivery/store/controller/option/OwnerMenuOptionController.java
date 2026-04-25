@@ -2,8 +2,8 @@ package com.delivery.store.controller.option;
 
 import com.delivery.store.auth.AuthenticatedUser;
 import com.delivery.store.auth.AuthenticatedUserInfo;
-import com.delivery.store.dto.request.owner.ReplaceMenuOptionGroupsRequest;
-import com.delivery.store.dto.response.ReplaceMenuOptionGroupsResultDto;
+import com.delivery.store.dto.request.owner.ReplaceMenuOptionGroupsRequestDto;
+import com.delivery.store.dto.response.ReplaceMenuOptionGroupsResponseDto;
 import com.delivery.store.service.option.MenuOptionService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,10 +26,10 @@ public class OwnerMenuOptionController {
     private final MenuOptionService menuOptionService;
 
     @PutMapping
-    public ResponseEntity<ReplaceMenuOptionGroupsResultDto> replaceMenuOptionGroups(
+    public ResponseEntity<ReplaceMenuOptionGroupsResponseDto> replaceMenuOptionGroups(
         @PathVariable Long storeId,
         @PathVariable Long menuId,
-        @Valid @RequestBody ReplaceMenuOptionGroupsRequest request,
+        @Valid @RequestBody ReplaceMenuOptionGroupsRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {

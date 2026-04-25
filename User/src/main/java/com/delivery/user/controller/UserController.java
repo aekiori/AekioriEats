@@ -2,10 +2,10 @@ package com.delivery.user.controller;
 
 import com.delivery.user.auth.AuthenticatedUser;
 import com.delivery.user.auth.AuthenticatedUserInfo;
-import com.delivery.user.dto.request.CreateUserDto;
-import com.delivery.user.dto.request.UpdateUserStatusDto;
-import com.delivery.user.dto.response.CreateUserResultDto;
-import com.delivery.user.dto.response.UserDetailResultDto;
+import com.delivery.user.dto.request.CreateUserRequestDto;
+import com.delivery.user.dto.request.UpdateUserStatusRequestDto;
+import com.delivery.user.dto.response.CreateUserResponseDto;
+import com.delivery.user.dto.response.UserDetailResponseDto;
 import com.delivery.user.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +35,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "사용자 생성", description = "User 도메인 사용자를 생성한다.")
-    public ResponseEntity<CreateUserResultDto> createUser(@Valid @RequestBody CreateUserDto request) {
+    public ResponseEntity<CreateUserResponseDto> createUser(@Valid @RequestBody CreateUserRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(request));
     }
 
@@ -51,7 +51,7 @@ public class UserController {
             example = "1"
         )
     })
-    public ResponseEntity<UserDetailResultDto> getUser(
+    public ResponseEntity<UserDetailResponseDto> getUser(
         @PathVariable Long userId,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
@@ -71,9 +71,9 @@ public class UserController {
             example = "1"
         )
     })
-    public ResponseEntity<UserDetailResultDto> updateUserStatus(
+    public ResponseEntity<UserDetailResponseDto> updateUserStatus(
         @PathVariable Long userId,
-        @Valid @RequestBody UpdateUserStatusDto request,
+        @Valid @RequestBody UpdateUserStatusRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {

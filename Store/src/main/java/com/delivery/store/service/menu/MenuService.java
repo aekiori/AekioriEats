@@ -6,14 +6,14 @@ import com.delivery.store.domain.menu.MenuTag;
 import com.delivery.store.domain.menu.Tag;
 import com.delivery.store.domain.option.MenuOptionGroup;
 import com.delivery.store.domain.store.Store;
-import com.delivery.store.dto.request.owner.CreateMenuGroupRequest;
-import com.delivery.store.dto.request.owner.CreateMenuRequest;
-import com.delivery.store.dto.request.owner.ReplaceMenuTagsRequest;
-import com.delivery.store.dto.request.owner.UpdateMenuGroupRequest;
-import com.delivery.store.dto.request.owner.UpdateMenuRequest;
-import com.delivery.store.dto.response.MenuGroupResultDto;
-import com.delivery.store.dto.response.MenuResultDto;
-import com.delivery.store.dto.response.ReplaceMenuTagsResultDto;
+import com.delivery.store.dto.request.owner.CreateMenuGroupRequestDto;
+import com.delivery.store.dto.request.owner.CreateMenuRequestDto;
+import com.delivery.store.dto.request.owner.ReplaceMenuTagsRequestDto;
+import com.delivery.store.dto.request.owner.UpdateMenuGroupRequestDto;
+import com.delivery.store.dto.request.owner.UpdateMenuRequestDto;
+import com.delivery.store.dto.response.MenuGroupResponseDto;
+import com.delivery.store.dto.response.MenuResponseDto;
+import com.delivery.store.dto.response.ReplaceMenuTagsResponseDto;
 import com.delivery.store.exception.ApiException;
 import com.delivery.store.repository.menu.MenuGroupRepository;
 import com.delivery.store.repository.menu.MenuRepository;
@@ -46,9 +46,9 @@ public class MenuService {
     private final MenuOptionRepository menuOptionRepository;
 
     @Transactional
-    public MenuGroupResultDto createMenuGroup(
+    public MenuGroupResponseDto createMenuGroup(
         Long storeId,
-        CreateMenuGroupRequest request,
+        CreateMenuGroupRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -56,13 +56,13 @@ public class MenuService {
         MenuGroup saved = menuGroupRepository.save(
             MenuGroup.create(store, request.name().trim(), request.displayOrder())
         );
-        return MenuGroupResultDto.from(saved);
+        return MenuGroupResponseDto.from(saved);
     }
 
     @Transactional
-    public MenuResultDto createMenu(
+    public MenuResponseDto createMenu(
         Long storeId,
-        CreateMenuRequest request,
+        CreateMenuRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -81,14 +81,14 @@ public class MenuService {
             request.displayOrderOrDefault()
         ));
 
-        return MenuResultDto.from(savedMenu);
+        return MenuResponseDto.from(savedMenu);
     }
 
     @Transactional
-    public MenuResultDto updateMenu(
+    public MenuResponseDto updateMenu(
         Long storeId,
         Long menuId,
-        UpdateMenuRequest request,
+        UpdateMenuRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -104,14 +104,14 @@ public class MenuService {
             request.isSoldOut(),
             nullableTrim(request.imageUrl())
         );
-        return MenuResultDto.from(menuRepository.save(menu));
+        return MenuResponseDto.from(menuRepository.save(menu));
     }
 
     @Transactional
-    public MenuGroupResultDto updateMenuGroup(
+    public MenuGroupResponseDto updateMenuGroup(
         Long storeId,
         Long menuGroupId,
-        UpdateMenuGroupRequest request,
+        UpdateMenuGroupRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -123,14 +123,14 @@ public class MenuService {
                 HttpStatus.NOT_FOUND
             ));
         menuGroup.update(request.name().trim(), request.displayOrder());
-        return MenuGroupResultDto.from(menuGroupRepository.save(menuGroup));
+        return MenuGroupResponseDto.from(menuGroupRepository.save(menuGroup));
     }
 
     @Transactional
-    public ReplaceMenuTagsResultDto replaceMenuTags(
+    public ReplaceMenuTagsResponseDto replaceMenuTags(
         Long storeId,
         Long menuId,
-        ReplaceMenuTagsRequest request,
+        ReplaceMenuTagsRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -159,11 +159,11 @@ public class MenuService {
             .toList();
         menuTagRepository.saveAll(menuTags);
 
-        List<ReplaceMenuTagsResultDto.TagRefDto> tagResults = byName.values().stream()
-            .map(tag -> new ReplaceMenuTagsResultDto.TagRefDto(tag.getId(), tag.getName()))
+        List<ReplaceMenuTagsResponseDto.TagRefDto> tagResults = byName.values().stream()
+            .map(tag -> new ReplaceMenuTagsResponseDto.TagRefDto(tag.getId(), tag.getName()))
             .toList();
 
-        return new ReplaceMenuTagsResultDto(menuId, tagResults);
+        return new ReplaceMenuTagsResponseDto(menuId, tagResults);
     }
 
     @Transactional

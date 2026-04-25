@@ -1,5 +1,8 @@
 package com.delivery.order.service;
 
+import com.delivery.order.service.event.KafkaEventExtractor;
+import com.delivery.order.service.outbox.OutboxPublishStatusConsumer;
+import com.delivery.order.service.outbox.OutboxStatusService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +28,7 @@ class OutboxPublishStatusConsumerTest {
     void setUp() {
         outboxPublishStatusConsumer = new OutboxPublishStatusConsumer(
             outboxStatusService,
-            new ObjectMapper()
+            new KafkaEventExtractor(new ObjectMapper())
         );
     }
 

@@ -2,8 +2,8 @@ package com.delivery.point.service.point;
 
 import com.delivery.point.domain.point.PointBalance;
 import com.delivery.point.domain.point.PointLedger;
-import com.delivery.point.dto.request.ChargePointRequest;
-import com.delivery.point.dto.response.PointBalanceResponse;
+import com.delivery.point.dto.request.ChargePointRequestDto;
+import com.delivery.point.dto.response.PointBalanceResponseDto;
 import com.delivery.point.repository.point.PointBalanceRepository;
 import com.delivery.point.repository.point.PointLedgerRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,17 +22,17 @@ public class PointService {
     private final PointAuthorizationService pointAuthorizationService;
 
     @Transactional(readOnly = true)
-    public PointBalanceResponse getBalance(Long userId, long authenticatedUserId) {
+    public PointBalanceResponseDto getBalance(Long userId, long authenticatedUserId) {
         validateUserId(userId);
         pointAuthorizationService.requireSelf(authenticatedUserId, userId);
         Integer balance = pointBalanceRepository.findByUserId(userId)
             .map(PointBalance::getBalance)
             .orElse(0);
-        return new PointBalanceResponse(userId, balance);
+        return new PointBalanceResponseDto(userId, balance);
     }
 
     @Transactional
-    public PointBalanceResponse charge(Long userId, ChargePointRequest request, long authenticatedUserId) {
+    public PointBalanceResponseDto charge(Long userId, ChargePointRequestDto request, long authenticatedUserId) {
         validateUserId(userId);
         pointAuthorizationService.requireSelf(authenticatedUserId, userId);
         if (request == null || request.amount() == null || request.amount() <= 0) {
@@ -45,10 +45,10 @@ public class PointService {
         balance.charge(request.amount());
         recordPointCharge(userId, request);
 
-        return new PointBalanceResponse(userId, balance.getBalance());
+        return new PointBalanceResponseDto(userId, balance.getBalance());
     }
 
-    private void recordPointCharge(Long userId, ChargePointRequest request) {
+    private void recordPointCharge(Long userId, ChargePointRequestDto request) {
         pointLedgerRepository.save(PointLedger.charged(
             userId,
             request.amount(),

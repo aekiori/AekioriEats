@@ -41,6 +41,11 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 order:
+    event:
+        consumer:
+            retry-attempts: ${ORDER_EVENT_CONSUMER_RETRY_ATTEMPTS:3}
+            retry-interval-ms: ${ORDER_EVENT_CONSUMER_RETRY_INTERVAL_MS:1000}
+
     idempotency:
         lock-ttl-seconds: ${ORDER_IDEMPOTENCY_LOCK_TTL_SECONDS:30}
         result-ttl-seconds: ${ORDER_IDEMPOTENCY_RESULT_TTL_SECONDS:600}

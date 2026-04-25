@@ -3,9 +3,10 @@ package com.delivery.store.service.store;
 import com.delivery.store.domain.outbox.Outbox;
 import com.delivery.store.domain.store.Store;
 import com.delivery.store.domain.store.StoreOrder;
-import com.delivery.store.dto.request.owner.DecideStoreOrderRequest;
-import com.delivery.store.dto.response.StoreOrderDecisionResultDto;
-import com.delivery.store.dto.response.StoreOrderResultDto;
+import com.delivery.store.dto.request.owner.DecideStoreOrderRequestDto;
+import com.delivery.store.dto.request.owner.GetStoreOrdersRequestDto;
+import com.delivery.store.dto.response.StoreOrderDecisionResponseDto;
+import com.delivery.store.dto.response.StoreOrderResponseDto;
 import com.delivery.store.exception.ApiException;
 import com.delivery.store.repository.outbox.OutboxRepository;
 import com.delivery.store.repository.store.StoreOrderRepository;
@@ -28,26 +29,26 @@ public class StoreOrderDecisionService {
     private final OutboxRepository outboxRepository;
 
     @Transactional(readOnly = true)
-    public List<StoreOrderResultDto> getStoreOrders(
+    public List<StoreOrderResponseDto> getStoreOrders(
         Long storeId,
-        StoreOrder.Status status,
+        GetStoreOrdersRequestDto request,
         long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new ApiException("STORE_NOT_FOUND", "Store not found.", HttpStatus.NOT_FOUND));
         storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
 
-        return storeOrderRepository.findByStoreIdAndStatusOrderByCreatedAtDesc(storeId, status)
+        return storeOrderRepository.findByStoreIdAndStatusOrderByCreatedAtDesc(storeId, request.resolvedStatus())
             .stream()
-            .map(StoreOrderResultDto::from)
+            .map(StoreOrderResponseDto::from)
             .toList();
     }
 
     @Transactional
-    public StoreOrderDecisionResultDto decide(
+    public StoreOrderDecisionResponseDto decide(
         Long storeId,
         Long orderId,
-        DecideStoreOrderRequest request,
+        DecideStoreOrderRequestDto request,
         long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
@@ -63,7 +64,7 @@ public class StoreOrderDecisionService {
 
         StoreOrder.Status targetStatus = toStatus(request.decision());
         if (storeOrder.getStatus() == targetStatus) {
-            return StoreOrderDecisionResultDto.from(storeOrder);
+            return StoreOrderDecisionResponseDto.from(storeOrder);
         }
 
         if (storeOrder.getStatus() != StoreOrder.Status.PENDING) {
@@ -79,17 +80,17 @@ public class StoreOrderDecisionService {
 
         storeOrderRepository.save(storeOrder);
         outboxRepository.save(outbox);
-        return StoreOrderDecisionResultDto.from(storeOrder);
+        return StoreOrderDecisionResponseDto.from(storeOrder);
     }
 
     private Outbox decideStoreOrder(
         StoreOrder storeOrder,
-        DecideStoreOrderRequest request,
+        DecideStoreOrderRequestDto request,
         Long storeId,
         Long orderId,
         LocalDateTime decidedAt
     ) {
-        if (request.decision() == DecideStoreOrderRequest.Decision.ACCEPTED) {
+        if (request.decision() == DecideStoreOrderRequestDto.Decision.ACCEPTED) {
             storeOrder.accept(decidedAt);
             return StoreOrderDecisionOutboxEvent.accepted(orderId, storeId);
         }
@@ -106,8 +107,8 @@ public class StoreOrderDecisionService {
         return rejectReason.trim();
     }
 
-    private StoreOrder.Status toStatus(DecideStoreOrderRequest.Decision decision) {
-        if (decision == DecideStoreOrderRequest.Decision.ACCEPTED) {
+    private StoreOrder.Status toStatus(DecideStoreOrderRequestDto.Decision decision) {
+        if (decision == DecideStoreOrderRequestDto.Decision.ACCEPTED) {
             return StoreOrder.Status.ACCEPTED;
         }
         return StoreOrder.Status.REJECTED;

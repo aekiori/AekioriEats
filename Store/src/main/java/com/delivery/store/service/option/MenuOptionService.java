@@ -3,8 +3,8 @@ package com.delivery.store.service.option;
 import com.delivery.store.domain.menu.Menu;
 import com.delivery.store.domain.option.MenuOption;
 import com.delivery.store.domain.option.MenuOptionGroup;
-import com.delivery.store.dto.request.owner.ReplaceMenuOptionGroupsRequest;
-import com.delivery.store.dto.response.ReplaceMenuOptionGroupsResultDto;
+import com.delivery.store.dto.request.owner.ReplaceMenuOptionGroupsRequestDto;
+import com.delivery.store.dto.response.ReplaceMenuOptionGroupsResponseDto;
 import com.delivery.store.repository.option.MenuOptionGroupRepository;
 import com.delivery.store.repository.option.MenuOptionRepository;
 import com.delivery.store.service.store.StoreDomainSupport;
@@ -23,10 +23,10 @@ public class MenuOptionService {
     private final MenuOptionRepository menuOptionRepository;
 
     @Transactional
-    public ReplaceMenuOptionGroupsResultDto replaceMenuOptionGroups(
+    public ReplaceMenuOptionGroupsResponseDto replaceMenuOptionGroups(
         Long storeId,
         Long menuId,
-        ReplaceMenuOptionGroupsRequest request,
+        ReplaceMenuOptionGroupsRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -40,9 +40,9 @@ public class MenuOptionService {
         }
         menuOptionGroupRepository.deleteByMenuId(menuId);
 
-        List<ReplaceMenuOptionGroupsResultDto.OptionGroupResultDto> groupResults = new ArrayList<>();
+        List<ReplaceMenuOptionGroupsResponseDto.OptionGroupResultDto> groupResults = new ArrayList<>();
         for (int i = 0; i < request.optionGroups().size(); i++) {
-            ReplaceMenuOptionGroupsRequest.OptionGroupRequest optionGroupRequest = request.optionGroups().get(i);
+            ReplaceMenuOptionGroupsRequestDto.OptionGroupRequest optionGroupRequest = request.optionGroups().get(i);
             MenuOptionGroup savedGroup = menuOptionGroupRepository.save(MenuOptionGroup.create(
                 menu,
                 optionGroupRequest.name().trim(),
@@ -55,7 +55,7 @@ public class MenuOptionService {
 
             List<MenuOption> options = new ArrayList<>();
             for (int j = 0; j < optionGroupRequest.options().size(); j++) {
-                ReplaceMenuOptionGroupsRequest.OptionRequest optionRequest = optionGroupRequest.options().get(j);
+                ReplaceMenuOptionGroupsRequestDto.OptionRequest optionRequest = optionGroupRequest.options().get(j);
                 options.add(MenuOption.create(
                     savedGroup,
                     optionRequest.name().trim(),
@@ -66,15 +66,15 @@ public class MenuOptionService {
             }
             List<MenuOption> savedOptions = menuOptionRepository.saveAll(options);
 
-            List<ReplaceMenuOptionGroupsResultDto.OptionResultDto> optionResults = savedOptions.stream()
-                .map(option -> new ReplaceMenuOptionGroupsResultDto.OptionResultDto(
+            List<ReplaceMenuOptionGroupsResponseDto.OptionResultDto> optionResults = savedOptions.stream()
+                .map(option -> new ReplaceMenuOptionGroupsResponseDto.OptionResultDto(
                     option.getName(),
                     option.getExtraPrice(),
                     option.isAvailable()
                 ))
                 .toList();
 
-            groupResults.add(new ReplaceMenuOptionGroupsResultDto.OptionGroupResultDto(
+            groupResults.add(new ReplaceMenuOptionGroupsResponseDto.OptionGroupResultDto(
                 savedGroup.getName(),
                 savedGroup.isRequired(),
                 savedGroup.isMultiple(),
@@ -84,7 +84,7 @@ public class MenuOptionService {
             ));
         }
 
-        return new ReplaceMenuOptionGroupsResultDto(menuId, groupResults);
+        return new ReplaceMenuOptionGroupsResponseDto(menuId, groupResults);
     }
 }
 

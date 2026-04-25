@@ -47,6 +47,7 @@ public class PaymentResultEventConsumer {
                 record.offset(),
                 exception
             );
+            throw new RuntimeException(exception);
         }
     }
 

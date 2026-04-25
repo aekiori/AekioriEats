@@ -2,6 +2,7 @@ package com.delivery.user.service;
 
 import com.delivery.user.domain.user.User;
 import com.delivery.user.repository.user.UserRepository;
+import com.delivery.user.service.event.UserCreatedEventConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

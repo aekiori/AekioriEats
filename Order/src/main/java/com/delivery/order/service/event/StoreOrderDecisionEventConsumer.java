@@ -44,6 +44,7 @@ public class StoreOrderDecisionEventConsumer {
                 record.offset(),
                 exception
             );
+            throw new RuntimeException(exception);
         }
     }
 

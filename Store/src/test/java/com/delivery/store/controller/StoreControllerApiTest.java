@@ -1,6 +1,6 @@
 package com.delivery.store.controller;
 
-import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
+import com.delivery.store.dto.request.owner.CreateOwnerStoreRequestDto;
 import com.delivery.store.service.store.StoreService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class StoreControllerApiTest {
     void get_store_api_returns_200_for_owner() throws Exception {
         long ownerUserId = 101L;
         long storeId = storeService.createOwnerStore(
-                new CreateOwnerStoreRequest("Owner Store", null, null, null),
+                new CreateOwnerStoreRequestDto("Owner Store", null, null, null),
                 ownerUserId
             )
             .storeId();
@@ -55,7 +55,7 @@ class StoreControllerApiTest {
     void get_store_api_returns_403_when_request_user_is_not_owner() throws Exception {
         long ownerUserId = 201L;
         long storeId = storeService.createOwnerStore(
-                new CreateOwnerStoreRequest("Owner Store 2", null, null, null),
+                new CreateOwnerStoreRequestDto("Owner Store 2", null, null, null),
                 ownerUserId
             )
             .storeId();
@@ -70,7 +70,7 @@ class StoreControllerApiTest {
     void get_store_api_returns_401_when_principal_header_is_missing() throws Exception {
         long ownerUserId = 301L;
         long storeId = storeService.createOwnerStore(
-                new CreateOwnerStoreRequest("Owner Store 3", null, null, null),
+                new CreateOwnerStoreRequestDto("Owner Store 3", null, null, null),
                 ownerUserId
             )
             .storeId();
@@ -84,7 +84,7 @@ class StoreControllerApiTest {
     void replace_store_hours_api_accepts_day_of_week_7() throws Exception {
         long ownerUserId = 501L;
         long storeId = storeService.createOwnerStore(
-                new CreateOwnerStoreRequest("Owner Store 5", null, null, null),
+                new CreateOwnerStoreRequestDto("Owner Store 5", null, null, null),
                 ownerUserId
             )
             .storeId();
@@ -110,7 +110,7 @@ class StoreControllerApiTest {
     void replace_store_hours_api_rejects_day_of_week_0() throws Exception {
         long ownerUserId = 601L;
         long storeId = storeService.createOwnerStore(
-                new CreateOwnerStoreRequest("Owner Store 6", null, null, null),
+                new CreateOwnerStoreRequestDto("Owner Store 6", null, null, null),
                 ownerUserId
             )
             .storeId();

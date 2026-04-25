@@ -2,7 +2,10 @@ package com.delivery.store.service.event;
 
 import com.delivery.store.constant.OrderEventType;
 import com.delivery.store.domain.store.Store;
+import com.delivery.store.domain.store.StoreHour;
 import com.delivery.store.dto.event.OrderCreatedEventDto;
+import com.delivery.store.repository.store.StoreHolidayRepository;
+import com.delivery.store.repository.store.StoreHourRepository;
 import com.delivery.store.repository.store.StoreRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,11 +27,21 @@ class StoreOrderValidationServiceTest {
     @Mock
     private StoreRepository storeRepository;
 
+    @Mock
+    private StoreHourRepository storeHourRepository;
+
+    @Mock
+    private StoreHolidayRepository storeHolidayRepository;
+
     private StoreOrderableValidator storeOrderValidationService;
 
     @BeforeEach
     void setUp() {
-        storeOrderValidationService = new StoreOrderableValidator(storeRepository);
+        storeOrderValidationService = new StoreOrderableValidator(
+            storeRepository,
+            storeHourRepository,
+            storeHolidayRepository
+        );
     }
 
     @Test
@@ -47,6 +63,7 @@ class StoreOrderValidationServiceTest {
         OrderCreatedEventDto event = createEvent(100L, 20000);
 
         when(storeRepository.findById(100L)).thenReturn(Optional.of(store));
+        stubOpenSchedule(store);
 
         StoreOrderValidationResult result = storeOrderValidationService.validate(event);
 
@@ -61,6 +78,7 @@ class StoreOrderValidationServiceTest {
         OrderCreatedEventDto event = createEvent(100L, 14000);
 
         when(storeRepository.findById(100L)).thenReturn(Optional.of(store));
+        stubOpenSchedule(store);
 
         StoreOrderValidationResult result = storeOrderValidationService.validate(event);
 
@@ -75,6 +93,7 @@ class StoreOrderValidationServiceTest {
         OrderCreatedEventDto event = createEvent(100L, 15000);
 
         when(storeRepository.findById(100L)).thenReturn(Optional.of(store));
+        stubOpenSchedule(store);
 
         StoreOrderValidationResult result = storeOrderValidationService.validate(event);
 
@@ -96,5 +115,16 @@ class StoreOrderValidationServiceTest {
             totalAmount,
             "PENDING"
         );
+    }
+
+    private void stubOpenSchedule(Store store) {
+        when(storeHourRepository.findByStoreIdOrderByDayOfWeekAsc(store.getId()))
+            .thenReturn(List.of(StoreHour.create(
+                store.getId(),
+                LocalDate.now().getDayOfWeek().getValue(),
+                LocalTime.MIN,
+                LocalTime.MAX
+            )));
+        when(storeHolidayRepository.findHolidayDatesByStoreId(store.getId())).thenReturn(List.of());
     }
 }

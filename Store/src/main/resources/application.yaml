@@ -34,6 +34,14 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 store:
+    internal:
+        api-key: ${STORE_INTERNAL_API_KEY:store-internal-dev-key}
+
+    event:
+        consumer:
+            retry-attempts: ${STORE_EVENT_CONSUMER_RETRY_ATTEMPTS:3}
+            retry-interval-ms: ${STORE_EVENT_CONSUMER_RETRY_INTERVAL_MS:1000}
+
     order-event:
         order-created-topic: ${STORE_ORDER_EVENT_ORDER_CREATED_TOPIC:outbox.event.OrderCreated}
         order-status-changed-topic: ${STORE_ORDER_EVENT_ORDER_STATUS_CHANGED_TOPIC:outbox.event.OrderStatusChanged}

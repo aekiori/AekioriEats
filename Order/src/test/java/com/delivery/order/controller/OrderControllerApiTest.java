@@ -1,8 +1,8 @@
 package com.delivery.order.controller;
 
 import com.delivery.order.TestIdempotencyCacheConfig;
-import com.delivery.order.dto.request.CreateOrderDto;
-import com.delivery.order.dto.request.CreateOrderItemDto;
+import com.delivery.order.dto.request.CreateOrderRequestDto;
+import com.delivery.order.dto.request.CreateOrderItemRequestDto;
 import com.delivery.order.service.order.CreateOrderService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -422,14 +422,14 @@ class OrderControllerApiTest {
 
     private Long createOrder(long userId) {
         return createOrderService.createOrder(
-            new CreateOrderDto(
+            new CreateOrderRequestDto(
                 userId,
                 100L,
                 "Seoul Gangnam-gu Teheran-ro 123",
                 1000,
                 List.of(
-                    new CreateOrderItemDto(10L, "Bulgogi Burger", 8500, 2),
-                    new CreateOrderItemDto(20L, "Cola", 2000, 1)
+                    new CreateOrderItemRequestDto(10L, "Bulgogi Burger", 8500, 2),
+                    new CreateOrderItemRequestDto(20L, "Cola", 2000, 1)
                 )
             ),
             "order-create-api-helper-001"

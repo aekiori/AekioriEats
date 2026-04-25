@@ -34,6 +34,14 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 payment:
+    internal:
+        api-key: ${PAYMENT_INTERNAL_API_KEY:payment-internal-dev-key}
+
+    event:
+        consumer:
+            retry-attempts: ${PAYMENT_EVENT_CONSUMER_RETRY_ATTEMPTS:3}
+            retry-interval-ms: ${PAYMENT_EVENT_CONSUMER_RETRY_INTERVAL_MS:1000}
+
     portone:
         verify-enabled: ${PAYMENT_PORTONE_VERIFY_ENABLED:false}
         api-base-url: ${PAYMENT_PORTONE_API_BASE_URL:https://api.portone.io}

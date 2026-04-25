@@ -3,10 +3,10 @@ package com.delivery.store.service.store;
 import com.delivery.store.domain.store.Store;
 import com.delivery.store.domain.store.StoreHoliday;
 import com.delivery.store.domain.store.StoreHour;
-import com.delivery.store.dto.request.owner.ReplaceStoreHolidaysRequest;
-import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequest;
-import com.delivery.store.dto.request.owner.StoreHourRequest;
-import com.delivery.store.dto.response.StoreDetailResultDto;
+import com.delivery.store.dto.request.owner.ReplaceStoreHolidaysRequestDto;
+import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequestDto;
+import com.delivery.store.dto.request.owner.StoreHourRequestDto;
+import com.delivery.store.dto.response.StoreDetailResponseDto;
 import com.delivery.store.exception.ApiException;
 import com.delivery.store.repository.store.StoreHolidayRepository;
 import com.delivery.store.repository.store.StoreHourRepository;
@@ -28,9 +28,9 @@ public class StoreScheduleService {
     private final StoreHolidayRepository storeHolidayRepository;
 
     @Transactional
-    public StoreDetailResultDto replaceStoreHours(
+    public StoreDetailResponseDto replaceStoreHours(
         Long storeId,
-        ReplaceStoreHoursRequest request,
+        ReplaceStoreHoursRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -42,13 +42,13 @@ public class StoreScheduleService {
             .map(hour -> toStoreHour(storeId, hour))
             .toList();
         storeHourRepository.saveAll(hours);
-        return StoreDetailResultDto.from(store);
+        return StoreDetailResponseDto.from(store);
     }
 
     @Transactional
-    public StoreDetailResultDto replaceStoreHolidays(
+    public StoreDetailResponseDto replaceStoreHolidays(
         Long storeId,
-        ReplaceStoreHolidaysRequest request,
+        ReplaceStoreHolidaysRequestDto request,
         long authenticatedUserId,
         String authenticatedUserRole
     ) {
@@ -62,13 +62,13 @@ public class StoreScheduleService {
             ))
             .toList();
         storeHolidayRepository.saveAll(holidays);
-        return StoreDetailResultDto.from(store);
+        return StoreDetailResponseDto.from(store);
     }
 
-    private void validateWeeklyHours(List<StoreHourRequest> weeklyHours) {
+    private void validateWeeklyHours(List<StoreHourRequestDto> weeklyHours) {
         Set<Integer> duplicatedDays = new HashSet<>();
         Set<Integer> seenDays = new HashSet<>();
-        for (StoreHourRequest weeklyHour : weeklyHours) {
+        for (StoreHourRequestDto weeklyHour : weeklyHours) {
             if (weeklyHour.dayOfWeek() < 1 || weeklyHour.dayOfWeek() > 7) {
                 throw new ApiException(
                     "INVALID_STORE_HOURS",
@@ -99,7 +99,7 @@ public class StoreScheduleService {
         }
     }
 
-    private StoreHour toStoreHour(Long storeId, StoreHourRequest request) {
+    private StoreHour toStoreHour(Long storeId, StoreHourRequestDto request) {
         LocalTime openTime = parseNullableTime(request.openTime(), "openTime");
         LocalTime closeTime = parseNullableTime(request.closeTime(), "closeTime");
 

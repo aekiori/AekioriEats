@@ -34,6 +34,14 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 point:
+    internal:
+        api-key: ${POINT_INTERNAL_API_KEY:point-internal-dev-key}
+
+    event:
+        consumer:
+            retry-attempts: ${POINT_EVENT_CONSUMER_RETRY_ATTEMPTS:3}
+            retry-interval-ms: ${POINT_EVENT_CONSUMER_RETRY_INTERVAL_MS:1000}
+
     payment-event:
         point-deduction-requested-topic: ${POINT_PAYMENT_EVENT_DEDUCTION_REQUESTED_TOPIC:outbox.event.PointDeductionRequested}
         point-deduction-consumer-group: ${POINT_PAYMENT_EVENT_DEDUCTION_CONSUMER_GROUP:point-deduction}

@@ -34,6 +34,9 @@ spring:
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 user:
+    internal:
+        api-key: ${USER_INTERNAL_API_KEY:user-internal-dev-key}
+
     event:
         source-topic: ${USER_EVENT_SOURCE_TOPIC:delivery.delivery_auth.outbox}
         smt-topic: ${USER_EVENT_SMT_TOPIC:outbox.event.USER}

@@ -1,13 +1,14 @@
 package com.delivery.order.service;
 
-import com.delivery.order.dto.request.CreateOrderDto;
-import com.delivery.order.dto.request.CreateOrderItemDto;
+import com.delivery.order.dto.request.CreateOrderRequestDto;
+import com.delivery.order.dto.request.CreateOrderItemRequestDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
 import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import com.delivery.order.service.order.CreateOrderService;
 import com.delivery.order.service.order.OrderAuthorizationService;
+import com.delivery.order.service.order.RecordOrderStatusHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,9 @@ class CreateOrderServiceTest {
     @Mock
     private OrderAuthorizationService orderAuthorizationService;
 
+    @Mock
+    private RecordOrderStatusHistoryService recordOrderStatusHistoryService;
+
     private CreateOrderService createOrderService;
 
     @BeforeEach
@@ -47,13 +51,14 @@ class CreateOrderServiceTest {
             orderItemRepository,
             orderIdempotencyCacheService,
             orderAuthorizationService,
+            recordOrderStatusHistoryService,
             new ObjectMapper()
         );
     }
 
     @Test
     void same_idempotency_key_with_different_request_throws_conflict() {
-        CreateOrderDto request = createRequest("서울시 강남구 테헤란로 123");
+        CreateOrderRequestDto request = createRequest("서울시 강남구 테헤란로 123");
         String requestHash = invokeHash(request);
 
         when(orderRepository.findByIdempotencyKey("idempotency-001")).thenReturn(Optional.empty());
@@ -75,7 +80,7 @@ class CreateOrderServiceTest {
 
     @Test
     void same_idempotency_key_with_same_processing_request_throws_in_progress() {
-        CreateOrderDto request = createRequest("서울시 강남구 테헤란로 123");
+        CreateOrderRequestDto request = createRequest("서울시 강남구 테헤란로 123");
         String requestHash = invokeHash(request);
 
         when(orderRepository.findByIdempotencyKey("idempotency-002")).thenReturn(Optional.empty());
@@ -94,9 +99,9 @@ class CreateOrderServiceTest {
         verifyNoInteractions(orderItemRepository);
     }
 
-    private String invokeHash(CreateOrderDto request) {
+    private String invokeHash(CreateOrderRequestDto request) {
         try {
-            java.lang.reflect.Method method = CreateOrderService.class.getDeclaredMethod("generateRequestHash", CreateOrderDto.class);
+            java.lang.reflect.Method method = CreateOrderService.class.getDeclaredMethod("generateRequestHash", CreateOrderRequestDto.class);
             method.setAccessible(true);
             return (String) method.invoke(createOrderService, request);
         } catch (Exception exception) {
@@ -104,15 +109,15 @@ class CreateOrderServiceTest {
         }
     }
 
-    private CreateOrderDto createRequest(String deliveryAddress) {
-        return new CreateOrderDto(
+    private CreateOrderRequestDto createRequest(String deliveryAddress) {
+        return new CreateOrderRequestDto(
             1L,
             100L,
             deliveryAddress,
             1000,
             List.of(
-                new CreateOrderItemDto(10L, "불고기버거", 8500, 2),
-                new CreateOrderItemDto(20L, "콜라", 2000, 1)
+                new CreateOrderItemRequestDto(10L, "불고기버거", 8500, 2),
+                new CreateOrderItemRequestDto(20L, "콜라", 2000, 1)
             )
         );
     }

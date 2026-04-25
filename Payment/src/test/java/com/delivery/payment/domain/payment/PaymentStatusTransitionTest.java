@@ -11,48 +11,45 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PaymentStatusTransitionTest {
     @Test
-    void payment_status_transitions_to_succeeded_through_processing() {
+    void payment_status_transitions_from_pending_to_success() {
         Payment payment = createRequestedPayment();
 
-        payment.markProcessing();
-        payment.markSucceeded();
+        payment.confirmSucceeded("pg-transaction-1");
 
-        assertThat(payment.getStatus()).isEqualTo(Payment.Status.SUCCEEDED);
-        assertThat(payment.getProcessedAt()).isNotNull();
+        assertThat(payment.getStatus()).isEqualTo(Payment.Status.SUCCESS);
+        assertThat(payment.getPgTransactionId()).isEqualTo("pg-transaction-1");
+        assertThat(payment.getFailedReason()).isNull();
     }
 
     @Test
-    void payment_status_rejects_direct_init_to_succeeded_transition() {
+    void payment_status_transitions_from_pending_to_failed() {
         Payment payment = createRequestedPayment();
 
-        assertThatThrownBy(payment::markSucceeded)
-            .isInstanceOf(InvalidPaymentStatusTransitionException.class)
-            .hasMessageContaining("currentStatus=INIT")
-            .hasMessageContaining("targetStatus=SUCCEEDED");
-    }
-
-    @Test
-    void payment_status_transitions_to_canceled_through_cancel_requested() {
-        Payment payment = createRequestedPayment();
-        payment.markProcessing();
-        payment.markSucceeded();
-
-        payment.requestCancel();
-        payment.markCanceled();
-
-        assertThat(payment.getStatus()).isEqualTo(Payment.Status.CANCELED);
-    }
-
-    @Test
-    void payment_status_rejects_cancel_request_when_not_succeeded() {
-        Payment payment = createRequestedPayment();
-        payment.markProcessing();
         payment.markFailed("PG_TIMEOUT");
 
-        assertThatThrownBy(payment::requestCancel)
+        assertThat(payment.getStatus()).isEqualTo(Payment.Status.FAILED);
+        assertThat(payment.getFailedReason()).isEqualTo("PG_TIMEOUT");
+    }
+
+    @Test
+    void payment_status_transitions_from_success_to_refunded() {
+        Payment payment = createRequestedPayment();
+        payment.confirmSucceeded("pg-transaction-1");
+
+        payment.refund("ORDER_CANCELED");
+
+        assertThat(payment.getStatus()).isEqualTo(Payment.Status.REFUNDED);
+        assertThat(payment.getFailedReason()).isEqualTo("ORDER_CANCELED");
+    }
+
+    @Test
+    void payment_status_rejects_refund_when_not_success() {
+        Payment payment = createRequestedPayment();
+
+        assertThatThrownBy(() -> payment.refund("ORDER_CANCELED"))
             .isInstanceOf(InvalidPaymentStatusTransitionException.class)
-            .hasMessageContaining("currentStatus=FAILED")
-            .hasMessageContaining("targetStatus=CANCEL_REQUESTED");
+            .hasMessageContaining("currentStatus=PENDING")
+            .hasMessageContaining("targetStatus=REFUNDED");
     }
 
     private Payment createRequestedPayment() {

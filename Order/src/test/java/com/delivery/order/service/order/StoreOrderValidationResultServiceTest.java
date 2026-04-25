@@ -4,6 +4,8 @@ import com.delivery.order.constant.OrderEventType;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.event.StoreOrderValidationEventDto;
 import com.delivery.order.repository.order.OrderRepository;
+import com.delivery.order.service.event.StoreOrderValidationResultService;
+import com.delivery.order.service.order.RecordOrderStatusHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,11 +25,17 @@ class StoreOrderValidationResultServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private RecordOrderStatusHistoryService recordOrderStatusHistoryService;
+
     private StoreOrderValidationResultService storeOrderValidationResultService;
 
     @BeforeEach
     void setUp() {
-        storeOrderValidationResultService = new StoreOrderValidationResultService(orderRepository);
+        storeOrderValidationResultService = new StoreOrderValidationResultService(
+            orderRepository,
+            recordOrderStatusHistoryService
+        );
     }
 
     @Test

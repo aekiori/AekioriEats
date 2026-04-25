@@ -2,8 +2,8 @@ package com.delivery.order.service.order;
 
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.domain.order.OrderStatusHistory;
-import com.delivery.order.dto.request.UpdateOrderStatusDto;
-import com.delivery.order.dto.response.UpdateOrderStatusResultDto;
+import com.delivery.order.dto.request.UpdateOrderStatusRequestDto;
+import com.delivery.order.dto.response.UpdateOrderStatusResponseDto;
 import com.delivery.order.repository.order.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,15 +20,15 @@ public class UpdateOrderStatusService {
     private final RecordOrderStatusHistoryService recordOrderStatusHistoryService;
 
     @Transactional
-    public UpdateOrderStatusResultDto updateOrderStatus(Long orderId, UpdateOrderStatusDto updateOrderStatusDto) {
+    public UpdateOrderStatusResponseDto updateOrderStatus(Long orderId, UpdateOrderStatusRequestDto updateOrderStatusDto) {
         Order order = orderReader.findOrder(orderId);
         return updateOrderStatus(order, updateOrderStatusDto);
     }
 
     @Transactional
-    public UpdateOrderStatusResultDto updateOrderStatus(
+    public UpdateOrderStatusResponseDto updateOrderStatus(
         Long orderId,
-        UpdateOrderStatusDto updateOrderStatusDto,
+        UpdateOrderStatusRequestDto updateOrderStatusDto,
         long authenticatedUserId
     ) {
         Order order = orderReader.findOrder(orderId);
@@ -37,17 +37,17 @@ public class UpdateOrderStatusService {
     }
 
     @Transactional
-    public UpdateOrderStatusResultDto cancelOrder(
+    public UpdateOrderStatusResponseDto cancelOrder(
         Long orderId,
         long authenticatedUserId
     ) {
         Order order = orderReader.findOrder(orderId);
         orderAuthorizationService.requireSelf(authenticatedUserId, order.getUserId());
 
-        return updateOrderStatus(order, new UpdateOrderStatusDto(Order.Status.CANCELLED, null));
+        return updateOrderStatus(order, new UpdateOrderStatusRequestDto(Order.Status.CANCELLED, null));
     }
 
-    private UpdateOrderStatusResultDto updateOrderStatus(Order order, UpdateOrderStatusDto updateOrderStatusDto) {
+    private UpdateOrderStatusResponseDto updateOrderStatus(Order order, UpdateOrderStatusRequestDto updateOrderStatusDto) {
         Long orderId = order.getId();
         Order.Status currentStatus = order.getStatus();
         Order.Status targetStatus = updateOrderStatusDto.status();
@@ -65,7 +65,7 @@ public class UpdateOrderStatusService {
             orderId, currentStatus, targetStatus
         );
 
-        return UpdateOrderStatusResultDto.from(savedOrder);
+        return UpdateOrderStatusResponseDto.from(savedOrder);
     }
 
     private Order changeStatusByApi(

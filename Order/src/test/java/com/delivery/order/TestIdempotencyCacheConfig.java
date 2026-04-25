@@ -1,6 +1,6 @@
 package com.delivery.order;
 
-import com.delivery.order.dto.response.CreateOrderResultDto;
+import com.delivery.order.dto.response.CreateOrderResponseDto;
 import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -11,7 +11,7 @@ public class TestIdempotencyCacheConfig {
     OrderIdempotencyCacheService orderIdempotencyCacheService() {
         return new OrderIdempotencyCacheService() {
             @Override
-            public CreateOrderResultDto getCompletedResult(String idempotencyKey) {
+            public CreateOrderResponseDto getCompletedResult(String idempotencyKey) {
                 return null;
             }
 
@@ -26,7 +26,7 @@ public class TestIdempotencyCacheConfig {
             }
 
             @Override
-            public void saveCompletedResult(String idempotencyKey, CreateOrderResultDto result) {
+            public void saveCompletedResult(String idempotencyKey, CreateOrderResponseDto result) {
             }
 
             @Override

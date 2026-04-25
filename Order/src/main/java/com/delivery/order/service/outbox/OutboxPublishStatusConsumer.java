@@ -58,6 +58,7 @@ public class OutboxPublishStatusConsumer {
                 record.offset(),
                 exception
             );
+            throw new RuntimeException(exception);
         }
     }
 

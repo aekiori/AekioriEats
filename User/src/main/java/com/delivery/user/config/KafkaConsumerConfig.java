@@ -28,19 +28,14 @@ public class KafkaConsumerConfig {
         ConsumerFactory<String, String> consumerFactory,
         KafkaTemplate<String, String> kafkaTemplate
     ) {
-        CommonErrorHandler errorHandler = buildErrorHandler(kafkaTemplate);
-
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
-        factory.setCommonErrorHandler(errorHandler);
-
+        factory.setCommonErrorHandler(buildErrorHandler(kafkaTemplate));
         return factory;
     }
 
     private CommonErrorHandler buildErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
-        // 실패 메시지를 {원본토픽}.DLT 토픽으로 전송
-
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
             (ConsumerRecord<?, ?> record, Exception ex) ->
                 new TopicPartition(record.topic() + ".DLT", -1)
@@ -48,11 +43,8 @@ public class KafkaConsumerConfig {
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
             recoverer,
-            // 총 시도수. retry 는 3번이라, 최초 1번 + 3번 = 총 4번
             new FixedBackOff(retryIntervalMs, retryAttempts)
         );
-
-        // 재시도 없이 즉시 DLQ로
         errorHandler.addNotRetryableExceptions(UnprocessableEventException.class);
 
         return errorHandler;

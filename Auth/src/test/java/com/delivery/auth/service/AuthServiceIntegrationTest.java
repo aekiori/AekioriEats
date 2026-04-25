@@ -6,7 +6,7 @@ import com.delivery.auth.dto.request.LogoutRequestDto;
 import com.delivery.auth.dto.request.RefreshTokenRequestDto;
 import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
-import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
+import com.delivery.auth.dto.response.EmailDuplicateCheckResponseDto;
 import com.delivery.auth.exception.ApiException;
 import com.delivery.auth.repository.token.RefreshTokenRepository;
 import io.jsonwebtoken.Claims;
@@ -161,7 +161,7 @@ class AuthServiceIntegrationTest {
 
     @Test
     void check_email_duplicate_returns_true_when_email_exists() {
-        EmailDuplicateCheckResultDto result = authService.checkEmailDuplicate("auth-user@example.com");
+        EmailDuplicateCheckResponseDto result = authService.checkEmailDuplicate("auth-user@example.com");
 
         assertThat(result.email()).isEqualTo("auth-user@example.com");
         assertThat(result.exists()).isTrue();
@@ -169,7 +169,7 @@ class AuthServiceIntegrationTest {
 
     @Test
     void check_email_duplicate_returns_false_when_email_not_exists() {
-        EmailDuplicateCheckResultDto result = authService.checkEmailDuplicate("no-user@example.com");
+        EmailDuplicateCheckResponseDto result = authService.checkEmailDuplicate("no-user@example.com");
 
         assertThat(result.email()).isEqualTo("no-user@example.com");
         assertThat(result.exists()).isFalse();

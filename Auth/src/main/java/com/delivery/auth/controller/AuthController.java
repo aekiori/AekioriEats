@@ -5,7 +5,7 @@ import com.delivery.auth.dto.request.LogoutRequestDto;
 import com.delivery.auth.dto.request.RefreshTokenRequestDto;
 import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
-import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
+import com.delivery.auth.dto.response.EmailDuplicateCheckResponseDto;
 import com.delivery.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +35,7 @@ public class AuthController {
 
     @GetMapping("/email/exists")
     @Operation(summary = "이메일 중복 확인", description = "가입 가능한 이메일인지 확인한다.")
-    public ResponseEntity<EmailDuplicateCheckResultDto> checkEmailDuplicate(
+    public ResponseEntity<EmailDuplicateCheckResponseDto> checkEmailDuplicate(
         @Parameter(description = "중복 확인할 이메일", required = true, example = "order-tester@example.com")
         @RequestParam @NotBlank @Email String email
     ) {

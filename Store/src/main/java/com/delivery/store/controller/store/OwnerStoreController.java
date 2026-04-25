@@ -2,22 +2,22 @@ package com.delivery.store.controller.store;
 
 import com.delivery.store.auth.AuthenticatedUser;
 import com.delivery.store.auth.AuthenticatedUserInfo;
-import com.delivery.store.dto.request.UpdateStoreStatusDto;
-import com.delivery.store.dto.request.owner.CreateOwnerStoreRequest;
-import com.delivery.store.dto.request.owner.DecideStoreOrderRequest;
-import com.delivery.store.dto.request.owner.DeliveryPolicyRequest;
-import com.delivery.store.dto.request.owner.ReplaceStoreHolidaysRequest;
-import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequest;
-import com.delivery.store.dto.request.owner.UpdateOwnerStoreRequest;
-import com.delivery.store.dto.response.CreateStoreResultDto;
-import com.delivery.store.dto.response.OwnerStoreSummaryResultDto;
-import com.delivery.store.dto.response.StoreOrderDecisionResultDto;
-import com.delivery.store.dto.response.StoreOrderResultDto;
-import com.delivery.store.dto.response.StoreDetailResultDto;
-import com.delivery.store.domain.store.StoreOrder;
+import com.delivery.store.dto.request.UpdateStoreStatusRequestDto;
+import com.delivery.store.dto.request.owner.CreateOwnerStoreRequestDto;
+import com.delivery.store.dto.request.owner.DecideStoreOrderRequestDto;
+import com.delivery.store.dto.request.owner.DeliveryPolicyRequestDto;
+import com.delivery.store.dto.request.owner.ReplaceStoreHolidaysRequestDto;
+import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequestDto;
+import com.delivery.store.dto.request.owner.UpdateOwnerStoreRequestDto;
+import com.delivery.store.dto.response.CreateStoreResponseDto;
+import com.delivery.store.dto.response.OwnerStoreSummaryResponseDto;
+import com.delivery.store.dto.response.StoreOrderDecisionResponseDto;
+import com.delivery.store.dto.response.StoreOrderResponseDto;
+import com.delivery.store.dto.response.StoreDetailResponseDto;
 import com.delivery.store.service.store.StoreScheduleService;
 import com.delivery.store.service.store.StoreService;
 import com.delivery.store.service.store.StoreOrderDecisionService;
+import com.delivery.store.dto.request.owner.GetStoreOrdersRequestDto;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -27,13 +27,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -49,7 +49,7 @@ public class OwnerStoreController {
     private final StoreOrderDecisionService storeOrderDecisionService;
 
     @GetMapping
-    public ResponseEntity<List<OwnerStoreSummaryResultDto>> getOwnerStores(
+    public ResponseEntity<List<OwnerStoreSummaryResponseDto>> getOwnerStores(
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -57,8 +57,8 @@ public class OwnerStoreController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateStoreResultDto> createStore(
-        @Valid @RequestBody CreateOwnerStoreRequest request,
+    public ResponseEntity<CreateStoreResponseDto> createStore(
+        @Valid @RequestBody CreateOwnerStoreRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -67,7 +67,7 @@ public class OwnerStoreController {
     }
 
     @GetMapping("/{storeId}")
-    public ResponseEntity<StoreDetailResultDto> getStore(
+    public ResponseEntity<StoreDetailResponseDto> getStore(
         @PathVariable Long storeId,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
@@ -78,9 +78,9 @@ public class OwnerStoreController {
     }
 
     @PutMapping("/{storeId}")
-    public ResponseEntity<StoreDetailResultDto> updateStore(
+    public ResponseEntity<StoreDetailResponseDto> updateStore(
         @PathVariable Long storeId,
-        @Valid @RequestBody UpdateOwnerStoreRequest request,
+        @Valid @RequestBody UpdateOwnerStoreRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -104,9 +104,9 @@ public class OwnerStoreController {
     }
 
     @PatchMapping("/{storeId}/status")
-    public ResponseEntity<StoreDetailResultDto> updateStoreStatus(
+    public ResponseEntity<StoreDetailResponseDto> updateStoreStatus(
         @PathVariable Long storeId,
-        @Valid @RequestBody UpdateStoreStatusDto request,
+        @Valid @RequestBody UpdateStoreStatusRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -120,9 +120,9 @@ public class OwnerStoreController {
     }
 
     @PutMapping("/{storeId}/delivery-policy")
-    public ResponseEntity<StoreDetailResultDto> replaceDeliveryPolicy(
+    public ResponseEntity<StoreDetailResponseDto> replaceDeliveryPolicy(
         @PathVariable Long storeId,
-        @Valid @RequestBody DeliveryPolicyRequest request,
+        @Valid @RequestBody DeliveryPolicyRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -136,9 +136,9 @@ public class OwnerStoreController {
     }
 
     @PutMapping("/{storeId}/hours")
-    public ResponseEntity<StoreDetailResultDto> replaceStoreHours(
+    public ResponseEntity<StoreDetailResponseDto> replaceStoreHours(
         @PathVariable Long storeId,
-        @Valid @RequestBody ReplaceStoreHoursRequest request,
+        @Valid @RequestBody ReplaceStoreHoursRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -153,9 +153,9 @@ public class OwnerStoreController {
     }
 
     @PutMapping("/{storeId}/holidays")
-    public ResponseEntity<StoreDetailResultDto> replaceStoreHolidays(
+    public ResponseEntity<StoreDetailResponseDto> replaceStoreHolidays(
         @PathVariable Long storeId,
-        @Valid @RequestBody ReplaceStoreHolidaysRequest request,
+        @Valid @RequestBody ReplaceStoreHolidaysRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
@@ -170,26 +170,26 @@ public class OwnerStoreController {
     }
 
     @GetMapping("/{storeId}/orders")
-    public ResponseEntity<List<StoreOrderResultDto>> getStoreOrders(
+    public ResponseEntity<List<StoreOrderResponseDto>> getStoreOrders(
         @PathVariable Long storeId,
-        @RequestParam(defaultValue = "PENDING") StoreOrder.Status status,
+        @Valid @ModelAttribute GetStoreOrdersRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
         return ResponseEntity.ok(
             storeOrderDecisionService.getStoreOrders(
                 storeId,
-                status,
+                request,
                 authenticatedUser.userId()
             )
         );
     }
 
     @PostMapping("/{storeId}/orders/{orderId}/decision")
-    public ResponseEntity<StoreOrderDecisionResultDto> decideStoreOrder(
+    public ResponseEntity<StoreOrderDecisionResponseDto> decideStoreOrder(
         @PathVariable Long storeId,
         @PathVariable Long orderId,
-        @Valid @RequestBody DecideStoreOrderRequest request,
+        @Valid @RequestBody DecideStoreOrderRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {

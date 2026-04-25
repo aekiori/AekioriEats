@@ -2,8 +2,8 @@ package com.delivery.point.controller;
 
 import com.delivery.point.auth.AuthenticatedUser;
 import com.delivery.point.auth.AuthenticatedUserInfo;
-import com.delivery.point.dto.request.ChargePointRequest;
-import com.delivery.point.dto.response.PointBalanceResponse;
+import com.delivery.point.dto.request.ChargePointRequestDto;
+import com.delivery.point.dto.response.PointBalanceResponseDto;
 import com.delivery.point.service.point.PointService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,8 +24,8 @@ public class PointController {
     private final PointService pointService;
 
     @GetMapping("/users/{userId}/balance")
-    @Operation(summary = "포인트 잔액 조회", description = "사용자 포인트 잔액을 조회한다.")
-    public PointBalanceResponse getBalance(
+    @Operation(summary = "포인트 잔액 조회", description = "사용자의 포인트 잔액을 조회합니다.")
+    public PointBalanceResponseDto getBalance(
         @PathVariable Long userId,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
@@ -34,11 +34,11 @@ public class PointController {
     }
 
     @PostMapping("/users/{userId}/charge")
-    @Operation(summary = "포인트 충전", description = "사용자 포인트를 충전한다.")
-    public PointBalanceResponse charge(
+    @Operation(summary = "포인트 충전", description = "사용자의 포인트를 충전합니다.")
+    public PointBalanceResponseDto charge(
         @Parameter(description = "포인트를 충전할 사용자 ID", required = true, example = "1")
         @PathVariable Long userId,
-        @RequestBody ChargePointRequest request,
+        @RequestBody ChargePointRequestDto request,
         @Parameter(hidden = true)
         @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {

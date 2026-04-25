@@ -1,7 +1,7 @@
 package com.delivery.store.repository.store;
 
 import com.delivery.store.domain.store.StoreHoliday;
-import com.delivery.store.dto.response.query.StoreQueryDtos;
+import com.delivery.store.dto.response.query.StoreQueryResponseDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -12,7 +12,7 @@ public interface StoreHolidayRepository extends JpaRepository<StoreHoliday, Long
     void deleteByStoreId(Long storeId);
     List<StoreHoliday> findByStoreIdOrderByHolidayDateAsc(Long storeId);
 
-    // 영업 판단용
+    // 영업 여부 확인
     boolean existsByStoreIdAndHolidayDate(Long storeId, LocalDate holidayDate);
 
     @Query("SELECT h.holidayDate FROM StoreHoliday h WHERE h.storeId = :storeId")
@@ -24,7 +24,7 @@ public interface StoreHolidayRepository extends JpaRepository<StoreHoliday, Long
         WHERE h.storeId = :storeId
         AND h.holidayDate >= :from
         ORDER BY h.holidayDate ASC
-    """) // 가게 상세 표시용 (앞으로 30일치만)
-    List<StoreQueryDtos.StoreHolidayDto> findUpcomingHolidaysByStoreId(Long storeId, LocalDate from);
+    """) // 가까운 휴일 조회 (기본으로 30일치)
+    List<StoreQueryResponseDto.StoreHolidayDto> findUpcomingHolidaysByStoreId(Long storeId, LocalDate from);
 
 }

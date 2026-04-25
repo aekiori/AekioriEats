@@ -132,4 +132,82 @@ topics = {
     replication_factor = 1
     config             = {}
   }
+
+  "delivery.delivery_auth.outbox.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.USER.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderCreated.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderStatusChanged.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentRequested.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderValidated.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.OrderRejected.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentSucceeded.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentFailed.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PaymentRefunded.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.StoreOrderAccepted.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.StoreOrderRejected.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
+
+  "outbox.event.PointDeductionRequested.DLT" = {
+    partitions         = 1
+    replication_factor = 1
+    config             = {}
+  }
 }

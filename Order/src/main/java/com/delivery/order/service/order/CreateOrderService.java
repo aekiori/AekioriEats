@@ -4,9 +4,9 @@ import com.delivery.order.domain.order.Order;
 import com.delivery.order.domain.order.OrderItem;
 import com.delivery.order.domain.order.OrderStatusHistory;
 import com.delivery.order.constant.OrderStatusChangeReason;
-import com.delivery.order.dto.request.CreateOrderDto;
-import com.delivery.order.dto.request.CreateOrderItemDto;
-import com.delivery.order.dto.response.CreateOrderResultDto;
+import com.delivery.order.dto.request.CreateOrderRequestDto;
+import com.delivery.order.dto.request.CreateOrderItemRequestDto;
+import com.delivery.order.dto.response.CreateOrderResponseDto;
 import com.delivery.order.exception.ApiException;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
@@ -42,11 +42,11 @@ public class CreateOrderService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public CreateOrderResultDto createOrder(CreateOrderDto request, String idempotencyKeyHeader) {
+    public CreateOrderResponseDto createOrder(CreateOrderRequestDto request, String idempotencyKeyHeader) {
         String idempotencyKey = normalizeIdempotencyKey(idempotencyKeyHeader);
         String requestHash = generateRequestHash(request);
 
-        CreateOrderResultDto existing = resolveIdempotentResult(idempotencyKey, requestHash);
+        CreateOrderResponseDto existing = resolveIdempotentResult(idempotencyKey, requestHash);
         if (existing != null) {
             return existing;
         }
@@ -54,7 +54,7 @@ public class CreateOrderService {
         log.info("Order create started. userId={}, storeId={}", request.userId(), request.storeId());
 
         try {
-            CreateOrderResultDto result = processCreateOrder(request, idempotencyKey, requestHash);
+            CreateOrderResponseDto result = processCreateOrder(request, idempotencyKey, requestHash);
             registerIdempotencyAfterCommit(idempotencyKey, result);
             return result;
         } catch (RuntimeException exception) {
@@ -64,8 +64,8 @@ public class CreateOrderService {
     }
 
     @Transactional
-    public CreateOrderResultDto createOrder(
-        CreateOrderDto request,
+    public CreateOrderResponseDto createOrder(
+        CreateOrderRequestDto request,
         String idempotencyKeyHeader,
         long authenticatedUserId
     ) {
@@ -74,8 +74,8 @@ public class CreateOrderService {
         return createOrder(request, idempotencyKeyHeader);
     }
 
-    private CreateOrderResultDto resolveIdempotentResult(String idempotencyKey, String requestHash) {
-        CreateOrderResultDto cachedResult = orderIdempotencyCacheService.getCompletedResult(idempotencyKey);
+    private CreateOrderResponseDto resolveIdempotentResult(String idempotencyKey, String requestHash) {
+        CreateOrderResponseDto cachedResult = orderIdempotencyCacheService.getCompletedResult(idempotencyKey);
 
         if (cachedResult != null) {
             log.info(
@@ -100,7 +100,7 @@ public class CreateOrderService {
         return null;
     }
 
-    private CreateOrderResultDto processCreateOrder(CreateOrderDto request, String idempotencyKey, String requestHash) {
+    private CreateOrderResponseDto processCreateOrder(CreateOrderRequestDto request, String idempotencyKey, String requestHash) {
         Order existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey).orElse(null);
         if (existingOrder != null) {
             return restoreExistingOrder(idempotencyKey, requestHash, existingOrder);
@@ -131,10 +131,10 @@ public class CreateOrderService {
             savedOrder.getFinalAmount()
         );
 
-        return CreateOrderResultDto.from(savedOrder);
+        return CreateOrderResponseDto.from(savedOrder);
     }
 
-    private CreateOrderResultDto resolveExistingOrderAfterDuplicateKey(
+    private CreateOrderResponseDto resolveExistingOrderAfterDuplicateKey(
         String idempotencyKey,
         String requestHash,
         DataIntegrityViolationException exception
@@ -145,10 +145,10 @@ public class CreateOrderService {
         return restoreExistingOrder(idempotencyKey, requestHash, existingOrder);
     }
 
-    private CreateOrderResultDto restoreExistingOrder(String idempotencyKey, String requestHash, Order existingOrder) {
+    private CreateOrderResponseDto restoreExistingOrder(String idempotencyKey, String requestHash, Order existingOrder) {
         validateSameRequest(existingOrder, requestHash);
 
-        CreateOrderResultDto result = CreateOrderResultDto.from(existingOrder);
+        CreateOrderResponseDto result = CreateOrderResponseDto.from(existingOrder);
         orderIdempotencyCacheService.saveCompletedResult(idempotencyKey, result);
 
         log.info(
@@ -182,7 +182,7 @@ public class CreateOrderService {
         }
     }
 
-    private void registerIdempotencyAfterCommit(String idempotencyKey, CreateOrderResultDto result) {
+    private void registerIdempotencyAfterCommit(String idempotencyKey, CreateOrderResponseDto result) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -198,14 +198,14 @@ public class CreateOrderService {
         });
     }
 
-    private int calculateTotalAmount(List<CreateOrderItemDto> items) {
+    private int calculateTotalAmount(List<CreateOrderItemRequestDto> items) {
         return items.stream()
             .mapToInt(item -> item.unitPrice() * item.quantity())
             .sum();
     }
 
     private Order saveOrder(
-        CreateOrderDto request,
+        CreateOrderRequestDto request,
         int totalAmount,
         int usedPointAmount,
         int finalAmount,
@@ -242,7 +242,7 @@ public class CreateOrderService {
         return idempotencyKey.trim();
     }
 
-    private String generateRequestHash(CreateOrderDto request) {
+    private String generateRequestHash(CreateOrderRequestDto request) {
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("userId", request.userId());
@@ -282,7 +282,7 @@ public class CreateOrderService {
         }
     }
 
-    private List<OrderItem> saveOrderItems(Order order, List<CreateOrderItemDto> items) {
+    private List<OrderItem> saveOrderItems(Order order, List<CreateOrderItemRequestDto> items) {
         List<OrderItem> orderItems = items.stream()
             .map(item -> new OrderItem(
                 order,

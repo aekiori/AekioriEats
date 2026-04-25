@@ -1,10 +1,10 @@
 package com.delivery.user.service.user;
 
 import com.delivery.user.domain.user.User;
-import com.delivery.user.dto.request.CreateUserDto;
-import com.delivery.user.dto.request.UpdateUserStatusDto;
-import com.delivery.user.dto.response.CreateUserResultDto;
-import com.delivery.user.dto.response.UserDetailResultDto;
+import com.delivery.user.dto.request.CreateUserRequestDto;
+import com.delivery.user.dto.request.UpdateUserStatusRequestDto;
+import com.delivery.user.dto.response.CreateUserResponseDto;
+import com.delivery.user.dto.response.UserDetailResponseDto;
 import com.delivery.user.exception.ApiException;
 import com.delivery.user.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class UserService {
     private final UserAuthorizationService userAuthorizationService;
 
     @Transactional
-    public CreateUserResultDto createUser(CreateUserDto request) {
+    public CreateUserResponseDto createUser(CreateUserRequestDto request) {
         String normalizedEmail = normalizeEmail(request.email());
         User savedUser;
 
@@ -36,32 +36,32 @@ public class UserService {
             );
         }
 
-        return CreateUserResultDto.from(savedUser);
+        return CreateUserResponseDto.from(savedUser);
     }
 
     @Transactional(readOnly = true)
-    public UserDetailResultDto getUser(Long userId) {
-        return UserDetailResultDto.from(findUser(userId));
+    public UserDetailResponseDto getUser(Long userId) {
+        return UserDetailResponseDto.from(findUser(userId));
     }
 
     @Transactional(readOnly = true)
-    public UserDetailResultDto getUser(Long userId, long authenticatedUserId) {
+    public UserDetailResponseDto getUser(Long userId, long authenticatedUserId) {
         userAuthorizationService.requireSelf(authenticatedUserId, userId);
         return getUser(userId);
     }
 
     @Transactional
-    public UserDetailResultDto updateUserStatus(Long userId, UpdateUserStatusDto request) {
+    public UserDetailResponseDto updateUserStatus(Long userId, UpdateUserStatusRequestDto request) {
         User user = findUser(userId);
         user.updateStatus(request.status());
 
-        return UserDetailResultDto.from(userRepository.save(user));
+        return UserDetailResponseDto.from(userRepository.save(user));
     }
 
     @Transactional
-    public UserDetailResultDto updateUserStatus(
+    public UserDetailResponseDto updateUserStatus(
         Long userId,
-        UpdateUserStatusDto request,
+        UpdateUserStatusRequestDto request,
         long authenticatedUserId
     ) {
         userAuthorizationService.requireSelf(authenticatedUserId, userId);

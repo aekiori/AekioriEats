@@ -1,6 +1,8 @@
 package com.delivery.order.service;
 
-import com.delivery.order.service.order.StoreOrderValidationResultService;
+import com.delivery.order.service.event.KafkaEventExtractor;
+import com.delivery.order.service.event.StoreOrderValidationEventConsumer;
+import com.delivery.order.service.event.StoreOrderValidationResultService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,7 @@ class StoreOrderValidationEventConsumerTest {
     @BeforeEach
     void setUp() {
         storeOrderValidationEventConsumer = new StoreOrderValidationEventConsumer(
-            new ObjectMapper(),
+            new KafkaEventExtractor(new ObjectMapper()),
             storeOrderValidationResultService
         );
     }

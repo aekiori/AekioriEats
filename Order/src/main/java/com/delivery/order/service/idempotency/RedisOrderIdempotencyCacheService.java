@@ -1,6 +1,6 @@
 package com.delivery.order.service.idempotency;
 
-import com.delivery.order.dto.response.CreateOrderResultDto;
+import com.delivery.order.dto.response.CreateOrderResponseDto;
 import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
     private long resultTtlSeconds;
 
     @Override
-    public CreateOrderResultDto getCompletedResult(String idempotencyKey) {
+    public CreateOrderResponseDto getCompletedResult(String idempotencyKey) {
         String cachedValue = stringRedisTemplate.opsForValue().get(resultKey(idempotencyKey));
 
         if (cachedValue == null || cachedValue.isBlank()) {
@@ -37,7 +37,7 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
         }
 
         try {
-            return objectMapper.readValue(cachedValue, CreateOrderResultDto.class);
+            return objectMapper.readValue(cachedValue, CreateOrderResponseDto.class);
         } catch (Exception exception) {
             log.warn("Redis 멱등성 결과 파싱 실패. idempotencyKey={}", idempotencyKey, exception);
             stringRedisTemplate.delete(resultKey(idempotencyKey));
@@ -62,7 +62,7 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
     }
 
     @Override
-    public void saveCompletedResult(String idempotencyKey, CreateOrderResultDto result) {
+    public void saveCompletedResult(String idempotencyKey, CreateOrderResponseDto result) {
         try {
             String value = objectMapper.writeValueAsString(result);
 

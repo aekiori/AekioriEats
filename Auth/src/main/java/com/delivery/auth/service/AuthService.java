@@ -7,7 +7,7 @@ import com.delivery.auth.dto.request.LogoutRequestDto;
 import com.delivery.auth.dto.request.RefreshTokenRequestDto;
 import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
-import com.delivery.auth.dto.response.EmailDuplicateCheckResultDto;
+import com.delivery.auth.dto.response.EmailDuplicateCheckResponseDto;
 import com.delivery.auth.exception.ApiException;
 import com.delivery.auth.repository.token.RefreshTokenRepository;
 import com.delivery.auth.repository.user.AuthUserRepository;
@@ -37,16 +37,16 @@ public class AuthService {
     private long refreshTokenExpirationSeconds;
 
     @Transactional(readOnly = true)
-    public EmailDuplicateCheckResultDto checkEmailDuplicate(String email) {
+    public EmailDuplicateCheckResponseDto checkEmailDuplicate(String email) {
         String normalizedEmail = normalizeEmail(email);
 
         if (!authEmailBloomFilter.shouldCheckDb(normalizedEmail)) {
-            return EmailDuplicateCheckResultDto.from(normalizedEmail, false);
+            return EmailDuplicateCheckResponseDto.from(normalizedEmail, false);
         }
 
         boolean exists = authUserRepository.existsByEmail(normalizedEmail);
 
-        return EmailDuplicateCheckResultDto.from(normalizedEmail, exists);
+        return EmailDuplicateCheckResponseDto.from(normalizedEmail, exists);
     }
 
     @Transactional
