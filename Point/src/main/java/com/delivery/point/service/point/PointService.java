@@ -19,10 +19,12 @@ import java.util.UUID;
 public class PointService {
     private final PointBalanceRepository pointBalanceRepository;
     private final PointLedgerRepository pointLedgerRepository;
+    private final PointAuthorizationService pointAuthorizationService;
 
     @Transactional(readOnly = true)
-    public PointBalanceResponse getBalance(Long userId) {
+    public PointBalanceResponse getBalance(Long userId, long authenticatedUserId) {
         validateUserId(userId);
+        pointAuthorizationService.requireSelf(authenticatedUserId, userId);
         Integer balance = pointBalanceRepository.findByUserId(userId)
             .map(PointBalance::getBalance)
             .orElse(0);
@@ -30,8 +32,9 @@ public class PointService {
     }
 
     @Transactional
-    public PointBalanceResponse charge(Long userId, ChargePointRequest request) {
+    public PointBalanceResponse charge(Long userId, ChargePointRequest request, long authenticatedUserId) {
         validateUserId(userId);
+        pointAuthorizationService.requireSelf(authenticatedUserId, userId);
         if (request == null || request.amount() == null || request.amount() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "amount must be positive.");
         }

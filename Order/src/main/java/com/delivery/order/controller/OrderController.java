@@ -1,5 +1,7 @@
 package com.delivery.order.controller;
 
+import com.delivery.order.auth.AuthenticatedUser;
+import com.delivery.order.auth.AuthenticatedUserInfo;
 import com.delivery.order.domain.order.Order;
 import com.delivery.order.dto.request.CreateOrderDto;
 import com.delivery.order.dto.request.UpdateOrderStatusDto;
@@ -7,7 +9,6 @@ import com.delivery.order.dto.response.*;
 import com.delivery.order.service.order.CreateOrderService;
 import com.delivery.order.service.order.GetOrderService;
 import com.delivery.order.service.order.GetOrdersService;
-import com.delivery.order.service.order.OrderAuthorizationService;
 import com.delivery.order.service.order.UpdateOrderStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,7 +43,6 @@ public class OrderController {
     private final GetOrderService getOrderService;
     private final GetOrdersService getOrdersService;
     private final UpdateOrderStatusService updateOrderStatusService;
-    private final OrderAuthorizationService orderAuthorizationService;
 
     @PostMapping
     @Operation(summary = "주문 생성", description = "idempotency key와 X-User-Id 헤더를 받아 주문을 생성한다.")
@@ -63,19 +63,18 @@ public class OrderController {
         )
     })
     public ResponseEntity<CreateOrderResultDto> createOrder(
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader,
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser,
         @RequestHeader("X-Idempotency-Key")
         @NotBlank
         @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
         String idempotencyKey,
         @RequestBody @Valid CreateOrderDto createOrderDto
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         CreateOrderResultDto response = createOrderService.createOrder(
             createOrderDto,
             idempotencyKey,
-            authenticatedUserId
+            authenticatedUser.userId()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -95,11 +94,10 @@ public class OrderController {
     })
     public ResponseEntity<OrderDetailResultDto> getOrder(
         @PathVariable Long orderId,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(getOrderService.getOrder(orderId, authenticatedUserId));
+        return ResponseEntity.ok(getOrderService.getOrder(orderId, authenticatedUser.userId()));
     }
 
     @GetMapping("/{orderId}/status")
@@ -116,12 +114,11 @@ public class OrderController {
     })
     public ResponseEntity<OrderStatusResultDto> getOrderStatus(
         @PathVariable Long orderId,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     )
     {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(getOrderService.getOrderStatus(orderId, authenticatedUserId));
+        return ResponseEntity.ok(getOrderService.getOrderStatus(orderId, authenticatedUser.userId()));
     }
 
     @GetMapping
@@ -142,11 +139,10 @@ public class OrderController {
         @RequestParam(required = false) Order.Status status,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) int limit,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(getOrdersService.getOrders(authenticatedUserId, status, page, limit));
+        return ResponseEntity.ok(getOrdersService.getOrders(authenticatedUser.userId(), status, page, limit));
     }
 
     @PostMapping("/{orderId}/cancel")
@@ -163,11 +159,10 @@ public class OrderController {
     })
     public ResponseEntity<UpdateOrderStatusResultDto> cancelOrder(
         @PathVariable Long orderId,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(updateOrderStatusService.cancelOrder(orderId, authenticatedUserId));
+        return ResponseEntity.ok(updateOrderStatusService.cancelOrder(orderId, authenticatedUser.userId()));
     }
 
     @PatchMapping("/{orderId}/status")
@@ -185,12 +180,11 @@ public class OrderController {
     public ResponseEntity<UpdateOrderStatusResultDto> updateOrderStatus(
         @PathVariable Long orderId,
         @Valid @RequestBody UpdateOrderStatusDto updateOrderStatusDto,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = orderAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
         return ResponseEntity.ok(
-            updateOrderStatusService.updateOrderStatus(orderId, updateOrderStatusDto, authenticatedUserId)
+            updateOrderStatusService.updateOrderStatus(orderId, updateOrderStatusDto, authenticatedUser.userId())
         );
     }
 }

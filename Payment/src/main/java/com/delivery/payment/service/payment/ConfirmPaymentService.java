@@ -22,9 +22,10 @@ public class ConfirmPaymentService {
     private final PaymentRepository paymentRepository;
     private final OutboxRepository outboxRepository;
     private final PortOnePaymentClient portOnePaymentClient;
+    private final PaymentAuthorizationService paymentAuthorizationService;
 
     @Transactional
-    public ConfirmPaymentResponse confirm(ConfirmPaymentRequest request) {
+    public ConfirmPaymentResponse confirm(ConfirmPaymentRequest request, long authenticatedUserId) {
         validateRequest(request);
 
         Payment payment = paymentRepository.findByOrderId(request.orderId())
@@ -32,6 +33,8 @@ public class ConfirmPaymentService {
                 HttpStatus.NOT_FOUND,
                 "Payment request is not ready for orderId=" + request.orderId()
             ));
+
+        paymentAuthorizationService.requireSelf(authenticatedUserId, payment.getUserId());
 
         log.info("payment confirm {}", payment);
 

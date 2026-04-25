@@ -1,10 +1,11 @@
 package com.delivery.user.controller;
 
+import com.delivery.user.auth.AuthenticatedUser;
+import com.delivery.user.auth.AuthenticatedUserInfo;
 import com.delivery.user.dto.request.CreateUserDto;
 import com.delivery.user.dto.request.UpdateUserStatusDto;
 import com.delivery.user.dto.response.CreateUserResultDto;
 import com.delivery.user.dto.response.UserDetailResultDto;
-import com.delivery.user.service.user.UserAuthorizationService;
 import com.delivery.user.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/users")
 @Tag(name = "User", description = "사용자 생성, 조회, 상태 변경 API")
 public class UserController {
-    private final UserAuthorizationService userAuthorizationService;
     private final UserService userService;
 
     @PostMapping
@@ -54,11 +53,10 @@ public class UserController {
     })
     public ResponseEntity<UserDetailResultDto> getUser(
         @PathVariable Long userId,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(userService.getUser(userId, authenticatedUserId));
+        return ResponseEntity.ok(userService.getUser(userId, authenticatedUser.userId()));
     }
 
     @PatchMapping("/{userId}/status")
@@ -76,10 +74,9 @@ public class UserController {
     public ResponseEntity<UserDetailResultDto> updateUserStatus(
         @PathVariable Long userId,
         @Valid @RequestBody UpdateUserStatusDto request,
-        @RequestHeader(value = "X-User-Id", required = true)
-        String authenticatedUserIdHeader
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        long authenticatedUserId = userAuthorizationService.parseAuthenticatedUserId(authenticatedUserIdHeader);
-        return ResponseEntity.ok(userService.updateUserStatus(userId, request, authenticatedUserId));
+        return ResponseEntity.ok(userService.updateUserStatus(userId, request, authenticatedUser.userId()));
     }
 }

@@ -1,5 +1,7 @@
 package com.delivery.point.controller;
 
+import com.delivery.point.auth.AuthenticatedUser;
+import com.delivery.point.auth.AuthenticatedUserInfo;
 import com.delivery.point.dto.request.ChargePointRequest;
 import com.delivery.point.dto.response.PointBalanceResponse;
 import com.delivery.point.service.point.PointService;
@@ -23,8 +25,12 @@ public class PointController {
 
     @GetMapping("/users/{userId}/balance")
     @Operation(summary = "포인트 잔액 조회", description = "사용자 포인트 잔액을 조회한다.")
-    public PointBalanceResponse getBalance(@PathVariable Long userId) {
-        return pointService.getBalance(userId);
+    public PointBalanceResponse getBalance(
+        @PathVariable Long userId,
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
+    ) {
+        return pointService.getBalance(userId, authenticatedUser.userId());
     }
 
     @PostMapping("/users/{userId}/charge")
@@ -32,8 +38,10 @@ public class PointController {
     public PointBalanceResponse charge(
         @Parameter(description = "포인트를 충전할 사용자 ID", required = true, example = "1")
         @PathVariable Long userId,
-        @RequestBody ChargePointRequest request
+        @RequestBody ChargePointRequest request,
+        @Parameter(hidden = true)
+        @AuthenticatedUser AuthenticatedUserInfo authenticatedUser
     ) {
-        return pointService.charge(userId, request);
+        return pointService.charge(userId, request, authenticatedUser.userId());
     }
 }
