@@ -223,7 +223,7 @@ class OrderServiceIntegrationTest {
 
         assertThatThrownBy(() -> createOrderService.createOrder(request, "order-create-invalid-amount-001"))
             .isInstanceOf(ApiException.class)
-            .hasMessageContaining("0");
+            .hasMessageContaining("zero");
 
         assertThat(orderRepository.findAll()).isEmpty();
         assertThat(orderItemRepository.findAll()).isEmpty();

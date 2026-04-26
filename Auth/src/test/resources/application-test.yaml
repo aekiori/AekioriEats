@@ -22,5 +22,8 @@ auth:
         refresh-token-expiration-seconds: 1209600
     bloom:
         enabled: false
+    token:
+        cleanup:
+            enabled: false
     rate-limit:
         enabled: false

@@ -23,9 +23,16 @@ public class RefreshTokenCleanupService {
     @Value("${auth.token.cleanup.batch-size:500}")
     private int batchSize;
 
+    @Value("${auth.token.cleanup.enabled:true}")
+    private boolean enabled;
+
     @Scheduled(cron = "${auth.token.cleanup.cron:0 0 5 * * *}")
     @Transactional
     public void cleanup() {
+        if (!enabled) {
+            return;
+        }
+
         LocalDateTime now = LocalDateTime.now();
         List<RefreshToken> targets = refreshTokenRepository.findExpiredOrRevoked(
             now,

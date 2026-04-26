@@ -25,6 +25,8 @@ spring:
 
     kafka:
         bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        listener:
+            auto-startup: ${SPRING_KAFKA_LISTENER_AUTO_STARTUP:true}
         consumer:
             auto-offset-reset: earliest
             key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

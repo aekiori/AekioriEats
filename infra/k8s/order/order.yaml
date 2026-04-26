@@ -14,6 +14,8 @@ data:
   SPRING_DATA_REDIS_HOST: "host.docker.internal"
   SPRING_DATA_REDIS_PORT: "6379"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "host.docker.internal:19092"
+  SPRING_KAFKA_LISTENER_AUTO_STARTUP: "true"
+  ORDER_TIMEOUT_COMPENSATION_ENABLED: "true"
   ORDER_OUTBOX_TOPIC: "delivery.delivery_order.outbox"
   ORDER_OUTBOX_SMT_TOPIC: "outbox.event.ORDER"
   ORDER_OUTBOX_PUBLISHER_CONSUMER_GROUP: "order-outbox-status"

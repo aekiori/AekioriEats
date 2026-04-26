@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,7 +60,6 @@ class CreateOrderServiceTest {
         CreateOrderRequestDto request = createRequest("서울시 강남구 테헤란로 123");
         String requestHash = invokeHash(request);
 
-        when(orderRepository.findByIdempotencyKey("idempotency-001")).thenReturn(Optional.empty());
         when(orderIdempotencyCacheService.getCompletedResult("idempotency-001")).thenReturn(null);
         when(orderIdempotencyCacheService.tryAcquire("idempotency-001", requestHash)).thenReturn(false);
         when(orderIdempotencyCacheService.getProcessingRequestHash("idempotency-001")).thenReturn("another-hash");
@@ -83,7 +81,6 @@ class CreateOrderServiceTest {
         CreateOrderRequestDto request = createRequest("서울시 강남구 테헤란로 123");
         String requestHash = invokeHash(request);
 
-        when(orderRepository.findByIdempotencyKey("idempotency-002")).thenReturn(Optional.empty());
         when(orderIdempotencyCacheService.getCompletedResult("idempotency-002")).thenReturn(null);
         when(orderIdempotencyCacheService.tryAcquire("idempotency-002", requestHash)).thenReturn(false);
         when(orderIdempotencyCacheService.getProcessingRequestHash("idempotency-002")).thenReturn(requestHash);

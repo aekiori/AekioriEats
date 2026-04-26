@@ -46,6 +46,7 @@ auth:
         warmup-batch-size: ${AUTH_BLOOM_WARMUP_BATCH_SIZE:10000}
     token:
         cleanup:
+            enabled: ${AUTH_TOKEN_CLEANUP_ENABLED:true}
             cron: ${AUTH_TOKEN_CLEANUP_CRON:0 0 5 * * *}
             batch-size: ${AUTH_TOKEN_CLEANUP_BATCH_SIZE:500}
     rate-limit:

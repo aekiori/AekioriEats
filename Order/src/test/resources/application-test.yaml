@@ -18,5 +18,7 @@ spring:
             auto-startup: false
 
 order:
+    timeout-compensation:
+        enabled: false
     internal:
         api-key: test-internal-api-key

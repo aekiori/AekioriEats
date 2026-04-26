@@ -34,7 +34,8 @@ public class OrderStatusHistory {
         API,
         STORE_VALIDATION_EVENT,
         PAYMENT_EVENT,
-        STORE_DECISION_EVENT
+        STORE_DECISION_EVENT,
+        TIMEOUT_COMPENSATION
     }
 
     @Id

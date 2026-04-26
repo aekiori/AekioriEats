@@ -14,6 +14,7 @@
 | [Kafka 토픽 관리 정책](infra/topic-management.md) | 토픽 단일 기준, 관리 경계, 현재 원칙 |
 | [Prometheus / Grafana 로컬 구성](infra/prometheus-grafana.md) | 스크랩 대상, 대시보드, 보관 정책 |
 | [PromQL 대시보드 템플릿](infra/promql-dashboard-template.md) | 주요 PromQL 쿼리 모음 |
+| [Kubernetes 배포 전략](infra/kubernetes-deployment-strategy.md) | API/Consumer/Scheduler 배포 분리 기준과 Redisson lock 운영 원칙 |
 
 ## 설계
 
@@ -23,6 +24,7 @@
 | [Outbox 설계 메모](outbox-design-note.md) | 서비스별 Outbox 분리 이유, 운영 원칙 |
 | [HTTP 멱등 처리 설계](idempotency-http.md) | 주문 API idempotency-key 처리 흐름 |
 | [Kafka Consumer 멱등 처리 설계](idempotency-kafka-consumer.md) | 컨슈머 중복 이벤트 처리 전략 |
+| [Order Timeout Compensation](order-timeout-compensation.md) | 주문 timeout 보상 처리와 Redisson 분산락 설계 |
 
 ## 서비스
 

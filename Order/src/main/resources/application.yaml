@@ -32,6 +32,8 @@ spring:
 
     kafka:
         bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        listener:
+            auto-startup: ${SPRING_KAFKA_LISTENER_AUTO_STARTUP:true}
         consumer:
             auto-offset-reset: earliest
             key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -49,6 +51,18 @@ order:
     idempotency:
         lock-ttl-seconds: ${ORDER_IDEMPOTENCY_LOCK_TTL_SECONDS:30}
         result-ttl-seconds: ${ORDER_IDEMPOTENCY_RESULT_TTL_SECONDS:600}
+
+    timeout-compensation:
+        enabled: ${ORDER_TIMEOUT_COMPENSATION_ENABLED:true}
+        fixed-delay-ms: ${ORDER_TIMEOUT_COMPENSATION_FIXED_DELAY_MS:60000}
+        initial-delay-ms: ${ORDER_TIMEOUT_COMPENSATION_INITIAL_DELAY_MS:30000}
+        batch-size: ${ORDER_TIMEOUT_COMPENSATION_BATCH_SIZE:100}
+        store-validation-timeout-minutes: ${ORDER_STORE_VALIDATION_TIMEOUT_MINUTES:10}
+        payment-result-timeout-minutes: ${ORDER_PAYMENT_RESULT_TIMEOUT_MINUTES:10}
+        store-decision-timeout-minutes: ${ORDER_STORE_DECISION_TIMEOUT_MINUTES:15}
+        lock-name: ${ORDER_TIMEOUT_COMPENSATION_LOCK_NAME:order:timeout-compensation}
+        lock-wait-ms: ${ORDER_TIMEOUT_COMPENSATION_LOCK_WAIT_MS:0}
+        lock-lease-ms: ${ORDER_TIMEOUT_COMPENSATION_LOCK_LEASE_MS:60000}
 
     outbox:
         order-created-topic: ${ORDER_OUTBOX_ORDER_CREATED_TOPIC:outbox.event.OrderCreated}

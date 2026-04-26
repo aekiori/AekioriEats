@@ -39,7 +39,8 @@ import java.util.Set;
     indexes = {
         @Index(name = "idx_userId_createdAt", columnList = "userId, createdAt"),
         @Index(name = "idx_userId_status_createdAt", columnList = "userId, status, createdAt"),
-        @Index(name = "idx_idempotencyKey", columnList = "idempotencyKey")
+        @Index(name = "idx_idempotencyKey", columnList = "idempotencyKey"),
+        @Index(name = "idx_status_updatedAt", columnList = "status, updatedAt")
     }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
