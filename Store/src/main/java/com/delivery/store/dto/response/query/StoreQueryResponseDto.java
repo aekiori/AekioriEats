@@ -8,8 +8,8 @@ public final class StoreQueryResponseDto {
     private StoreQueryResponseDto() {
     }
 
-    public record StoreSearchPageDto(
-        List<StoreSearchItemDto> content,
+    public record StoreSearchPageResponseDto(
+        List<StoreSearchItemResponseDto> content,
         int page,
         int size,
         long totalElements,
@@ -17,68 +17,68 @@ public final class StoreQueryResponseDto {
     ) {
     }
 
-    public record StoreSearchItemDto(
+    public record StoreSearchItemResponseDto(
         Long storeId,
         String name,
         String status,
-        DeliveryPolicyDto deliveryPolicy,
+        DeliveryPolicyResponseDto deliveryPolicy,
         String storeLogoUrl,
         List<String> matchedBy
     ) {
     }
 
-    public record StoreDetailDto(
+    public record StoreDetailResponseDto(
         Long storeId,
         Long ownerUserId,
         String name,
         String status,
-        DeliveryPolicyDto deliveryPolicy,
-        ImagesDto images,
-        List<CategoryDto> categories,
-        List<StoreHourDto> operatingHours,
-        List<StoreHolidayDto> holidays,
-        List<MenuGroupDto> menuGroups
+        DeliveryPolicyResponseDto deliveryPolicy,
+        ImagesResponseDto images,
+        List<CategoryResponseDto> categories,
+        List<StoreHourResponseDto> operatingHours,
+        List<StoreHolidayResponseDto> holidays,
+        List<MenuGroupResponseDto> menuGroups
     ) {
     }
 
-    public record DeliveryPolicyDto(
+    public record DeliveryPolicyResponseDto(
         int minOrderAmount,
         int deliveryTip
     ) {
     }
 
-    public record ImagesDto(
+    public record ImagesResponseDto(
         String storeLogoUrl
     ) {
     }
 
-    public record CategoryDto(
+    public record CategoryResponseDto(
         Long id,
         String name
     ) {
     }
 
-    public record StoreHourDto(
+    public record StoreHourResponseDto(
         int dayOfWeek,
         LocalTime openTime,
         LocalTime closeTime
     ) {
     }
 
-    public record StoreHolidayDto(
+    public record StoreHolidayResponseDto(
         LocalDate date,
         String reason
     ) {
     }
 
-    public record MenuGroupDto(
+    public record MenuGroupResponseDto(
         Long id,
         String name,
-        List<MenuDto> menus
+        List<MenuResponseDto> menus
     ) {
     }
 
-    public record MenuDto(
+    public record MenuResponseDto(
         Long id,
         String name,
         String description,
@@ -86,28 +86,28 @@ public final class StoreQueryResponseDto {
         boolean isAvailable,
         boolean isSoldOut,
         String imageUrl,
-        List<TagDto> tags,
-        List<OptionGroupDto> optionGroups
+        List<TagResponseDto> tags,
+        List<OptionGroupResponseDto> optionGroups
     ) {
     }
 
-    public record TagDto(
+    public record TagResponseDto(
         Long id,
         String name
     ) {
     }
 
-    public record OptionGroupDto(
+    public record OptionGroupResponseDto(
         String name,
         boolean isRequired,
         boolean isMultiple,
         int minSelectCount,
         int maxSelectCount,
-        List<OptionDto> options
+        List<OptionResponseDto> options
     ) {
     }
 
-    public record OptionDto(
+    public record OptionResponseDto(
         String name,
         int extraPrice,
         boolean isAvailable

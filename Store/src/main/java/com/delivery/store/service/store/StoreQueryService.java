@@ -60,30 +60,30 @@ public class StoreQueryService {
     private final StoreCategoryRepository storeCategoryRepository;
 
     @Transactional(readOnly = true)
-    public List<StoreQueryResponseDto.CategoryDto> getCategories() {
+    public List<StoreQueryResponseDto.CategoryResponseDto> getCategories() {
         return categoryRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
-            .map(category -> new StoreQueryResponseDto.CategoryDto(category.getId(), category.getName()))
+            .map(category -> new StoreQueryResponseDto.CategoryResponseDto(category.getId(), category.getName()))
             .toList();
     }
 
     @Transactional(readOnly = true)
-    public StoreQueryResponseDto.StoreSearchPageDto searchStores(StoreSearchRequestDto request) {
+    public StoreQueryResponseDto.StoreSearchPageResponseDto searchStores(StoreSearchRequestDto request) {
         Page<Store> stores = storeRepository.findByNameContainingIgnoreCase(
             request.resolvedQuery(),
             PageRequest.of(request.resolvedPage(), request.resolvedSize())
         );
-        List<StoreQueryResponseDto.StoreSearchItemDto> content = stores.getContent().stream()
-            .map(store -> new StoreQueryResponseDto.StoreSearchItemDto(
+        List<StoreQueryResponseDto.StoreSearchItemResponseDto> content = stores.getContent().stream()
+            .map(store -> new StoreQueryResponseDto.StoreSearchItemResponseDto(
                 store.getId(),
                 store.getName(),
                 store.getStatus().name(),
-                new StoreQueryResponseDto.DeliveryPolicyDto(store.getMinOrderAmount(), store.getDeliveryTip()),
+                new StoreQueryResponseDto.DeliveryPolicyResponseDto(store.getMinOrderAmount(), store.getDeliveryTip()),
                 store.getStoreLogoUrl(),
                 List.of("STORE_NAME")
             ))
             .toList();
 
-        return new StoreQueryResponseDto.StoreSearchPageDto(
+        return new StoreQueryResponseDto.StoreSearchPageResponseDto(
             content,
             stores.getNumber(),
             stores.getSize(),
@@ -93,26 +93,26 @@ public class StoreQueryService {
     }
 
     @Transactional(readOnly = true)
-    public StoreQueryResponseDto.StoreDetailDto getStoreDetail(Long storeId) {
+    public StoreQueryResponseDto.StoreDetailResponseDto getStoreDetail(Long storeId) {
         Store store = storeDomainSupport.findStore(storeId);
         return toStoreDetailDto(store);
     }
 
-    private StoreQueryResponseDto.StoreDetailDto toStoreDetailDto(Store store) {
+    private StoreQueryResponseDto.StoreDetailResponseDto toStoreDetailDto(Store store) {
         Long storeId = store.getId();
 
         List<MenuGroup> menuGroups = menuGroupRepository.findByStoreIdOrderByDisplayOrderAscIdAsc(storeId);
         List<Menu> menus = menuRepository.findByStoreIdOrderByDisplayOrderAscIdAsc(storeId);
-        Map<Long, List<StoreQueryResponseDto.MenuDto>> menusByGroupId = buildMenusByGroupId(menus);
-        List<StoreQueryResponseDto.MenuGroupDto> menuGroupDtos = buildMenuGroupDtos(menuGroups, menusByGroupId);
+        Map<Long, List<StoreQueryResponseDto.MenuResponseDto>> menusByGroupId = buildMenusByGroupId(menus);
+        List<StoreQueryResponseDto.MenuGroupResponseDto> menuGroupDtos = buildMenuGroupDtos(menuGroups, menusByGroupId);
 
-        return new StoreQueryResponseDto.StoreDetailDto(
+        return new StoreQueryResponseDto.StoreDetailResponseDto(
             store.getId(),
             store.getOwnerUserId(),
             store.getName(),
             store.getStatus().name(),
-            new StoreQueryResponseDto.DeliveryPolicyDto(store.getMinOrderAmount(), store.getDeliveryTip()),
-            new StoreQueryResponseDto.ImagesDto(store.getStoreLogoUrl()),
+            new StoreQueryResponseDto.DeliveryPolicyResponseDto(store.getMinOrderAmount(), store.getDeliveryTip()),
+            new StoreQueryResponseDto.ImagesResponseDto(store.getStoreLogoUrl()),
             loadCategories(storeId),
             loadOperatingHours(storeId),
             loadHolidays(storeId),
@@ -120,31 +120,31 @@ public class StoreQueryService {
         );
     }
 
-    private List<StoreQueryResponseDto.CategoryDto> loadCategories(Long storeId) {
+    private List<StoreQueryResponseDto.CategoryResponseDto> loadCategories(Long storeId) {
         return storeCategoryRepository.findCategoriesByStoreId(storeId);
     }
 
-    private List<StoreQueryResponseDto.StoreHourDto> loadOperatingHours(Long storeId) {
+    private List<StoreQueryResponseDto.StoreHourResponseDto> loadOperatingHours(Long storeId) {
         return storeHourRepository.findHoursByStoreId(storeId);
     }
 
-    private List<StoreQueryResponseDto.StoreHolidayDto> loadHolidays(Long storeId) {
+    private List<StoreQueryResponseDto.StoreHolidayResponseDto> loadHolidays(Long storeId) {
         return storeHolidayRepository.findUpcomingHolidaysByStoreId(storeId, LocalDate.now());
     }
 
-    private Map<Long, List<StoreQueryResponseDto.MenuDto>> buildMenusByGroupId(List<Menu> menus) {
+    private Map<Long, List<StoreQueryResponseDto.MenuResponseDto>> buildMenusByGroupId(List<Menu> menus) {
         if (menus.isEmpty()) {
             return Map.of();
         }
 
         List<Long> menuIds = menus.stream().map(Menu::getId).toList();
-        Map<Long, List<StoreQueryResponseDto.TagDto>> tagsByMenuId = loadTagsByMenuId(menuIds);
-        Map<Long, List<StoreQueryResponseDto.OptionGroupDto>> optionGroupsByMenuId = loadOptionGroupsByMenuId(menuIds);
+        Map<Long, List<StoreQueryResponseDto.TagResponseDto>> tagsByMenuId = loadTagsByMenuId(menuIds);
+        Map<Long, List<StoreQueryResponseDto.OptionGroupResponseDto>> optionGroupsByMenuId = loadOptionGroupsByMenuId(menuIds);
 
-        Map<Long, List<StoreQueryResponseDto.MenuDto>> menusByGroupId = new HashMap<>();
+        Map<Long, List<StoreQueryResponseDto.MenuResponseDto>> menusByGroupId = new HashMap<>();
         for (Menu menu : menus) {
             Long menuGroupId = menu.getMenuGroup() != null ? menu.getMenuGroup().getId() : UNGROUPED_MENU_GROUP_ID;
-            StoreQueryResponseDto.MenuDto menuDto = new StoreQueryResponseDto.MenuDto(
+            StoreQueryResponseDto.MenuResponseDto menuDto = new StoreQueryResponseDto.MenuResponseDto(
                 menu.getId(),
                 menu.getName(),
                 menu.getDescription(),
@@ -161,22 +161,22 @@ public class StoreQueryService {
         return menusByGroupId;
     }
 
-    private List<StoreQueryResponseDto.MenuGroupDto> buildMenuGroupDtos(
+    private List<StoreQueryResponseDto.MenuGroupResponseDto> buildMenuGroupDtos(
         List<MenuGroup> menuGroups,
-        Map<Long, List<StoreQueryResponseDto.MenuDto>> menusByGroupId
+        Map<Long, List<StoreQueryResponseDto.MenuResponseDto>> menusByGroupId
     ) {
-        List<StoreQueryResponseDto.MenuGroupDto> menuGroupDtos = new ArrayList<>();
+        List<StoreQueryResponseDto.MenuGroupResponseDto> menuGroupDtos = new ArrayList<>();
         for (MenuGroup menuGroup : menuGroups) {
-            menuGroupDtos.add(new StoreQueryResponseDto.MenuGroupDto(
+            menuGroupDtos.add(new StoreQueryResponseDto.MenuGroupResponseDto(
                 menuGroup.getId(),
                 menuGroup.getName(),
                 menusByGroupId.getOrDefault(menuGroup.getId(), List.of())
             ));
         }
 
-        List<StoreQueryResponseDto.MenuDto> ungroupedMenus = menusByGroupId.getOrDefault(UNGROUPED_MENU_GROUP_ID, List.of());
+        List<StoreQueryResponseDto.MenuResponseDto> ungroupedMenus = menusByGroupId.getOrDefault(UNGROUPED_MENU_GROUP_ID, List.of());
         if (!ungroupedMenus.isEmpty()) {
-            menuGroupDtos.add(new StoreQueryResponseDto.MenuGroupDto(
+            menuGroupDtos.add(new StoreQueryResponseDto.MenuGroupResponseDto(
                 UNGROUPED_MENU_GROUP_ID,
                 UNGROUPED_MENU_GROUP_NAME,
                 ungroupedMenus
@@ -185,7 +185,7 @@ public class StoreQueryService {
         return menuGroupDtos;
     }
 
-    private Map<Long, List<StoreQueryResponseDto.TagDto>> loadTagsByMenuId(Collection<Long> menuIds) {
+    private Map<Long, List<StoreQueryResponseDto.TagResponseDto>> loadTagsByMenuId(Collection<Long> menuIds) {
         if (menuIds.isEmpty()) {
             return Map.of();
         }
@@ -194,19 +194,19 @@ public class StoreQueryService {
         Map<Long, Tag> tagsById = tagRepository.findAllById(tagIds).stream()
             .collect(Collectors.toMap(Tag::getId, tag -> tag));
 
-        Map<Long, List<StoreQueryResponseDto.TagDto>> tagsByMenuId = new HashMap<>();
+        Map<Long, List<StoreQueryResponseDto.TagResponseDto>> tagsByMenuId = new HashMap<>();
         for (MenuTag menuTag : menuTags) {
             Tag tag = tagsById.get(menuTag.getTagId());
             if (tag == null) {
                 continue;
             }
             tagsByMenuId.computeIfAbsent(menuTag.getMenuId(), key -> new ArrayList<>())
-                .add(new StoreQueryResponseDto.TagDto(tag.getId(), tag.getName()));
+                .add(new StoreQueryResponseDto.TagResponseDto(tag.getId(), tag.getName()));
         }
         return tagsByMenuId;
     }
 
-    private Map<Long, List<StoreQueryResponseDto.OptionGroupDto>> loadOptionGroupsByMenuId(Collection<Long> menuIds) {
+    private Map<Long, List<StoreQueryResponseDto.OptionGroupResponseDto>> loadOptionGroupsByMenuId(Collection<Long> menuIds) {
         if (menuIds.isEmpty()) {
             return Map.of();
         }
@@ -217,20 +217,20 @@ public class StoreQueryService {
 
         List<Long> optionGroupIds = optionGroups.stream().map(MenuOptionGroup::getId).toList();
         List<MenuOption> options = menuOptionRepository.findByOptionGroupIdInOrderByDisplayOrderAscIdAsc(optionGroupIds);
-        Map<Long, List<StoreQueryResponseDto.OptionDto>> optionsByGroupId = new HashMap<>();
+        Map<Long, List<StoreQueryResponseDto.OptionResponseDto>> optionsByGroupId = new HashMap<>();
         for (MenuOption option : options) {
             optionsByGroupId.computeIfAbsent(option.getOptionGroup().getId(), key -> new ArrayList<>())
-                .add(new StoreQueryResponseDto.OptionDto(
+                .add(new StoreQueryResponseDto.OptionResponseDto(
                     option.getName(),
                     option.getExtraPrice(),
                     option.isAvailable()
                 ));
         }
 
-        Map<Long, List<StoreQueryResponseDto.OptionGroupDto>> groupsByMenuId = new HashMap<>();
+        Map<Long, List<StoreQueryResponseDto.OptionGroupResponseDto>> groupsByMenuId = new HashMap<>();
         for (MenuOptionGroup optionGroup : optionGroups) {
             groupsByMenuId.computeIfAbsent(optionGroup.getMenu().getId(), key -> new ArrayList<>())
-                .add(new StoreQueryResponseDto.OptionGroupDto(
+                .add(new StoreQueryResponseDto.OptionGroupResponseDto(
                     optionGroup.getName(),
                     optionGroup.isRequired(),
                     optionGroup.isMultiple(),

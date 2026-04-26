@@ -4,19 +4,19 @@ import java.util.List;
 
 public record ReplaceMenuOptionGroupsResponseDto(
     Long menuId,
-    List<OptionGroupResultDto> optionGroups
+    List<OptionGroupResponseDto> optionGroups
 ) {
-    public record OptionGroupResultDto(
+    public record OptionGroupResponseDto(
         String name,
         boolean isRequired,
         boolean isMultiple,
         int minSelectCount,
         int maxSelectCount,
-        List<OptionResultDto> options
+        List<OptionResponseDto> options
     ) {
     }
 
-    public record OptionResultDto(
+    public record OptionResponseDto(
         String name,
         int extraPrice,
         boolean isAvailable

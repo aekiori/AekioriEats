@@ -20,5 +20,5 @@ public interface StoreHourRepository extends JpaRepository<StoreHour, Long> {
         WHERE h.storeId = :storeId
         ORDER BY h.dayOfWeek ASC
     """)
-    List<StoreQueryResponseDto.StoreHourDto> findHoursByStoreId(Long storeId);
+    List<StoreQueryResponseDto.StoreHourResponseDto> findHoursByStoreId(Long storeId);
 }

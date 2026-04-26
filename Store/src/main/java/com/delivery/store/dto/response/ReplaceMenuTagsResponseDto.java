@@ -4,9 +4,9 @@ import java.util.List;
 
 public record ReplaceMenuTagsResponseDto(
     Long menuId,
-    List<TagRefDto> tags
+    List<TagRefResponseDto> tags
 ) {
-    public record TagRefDto(
+    public record TagRefResponseDto(
         Long id,
         String name
     ) {

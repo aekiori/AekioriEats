@@ -159,8 +159,8 @@ public class MenuService {
             .toList();
         menuTagRepository.saveAll(menuTags);
 
-        List<ReplaceMenuTagsResponseDto.TagRefDto> tagResults = byName.values().stream()
-            .map(tag -> new ReplaceMenuTagsResponseDto.TagRefDto(tag.getId(), tag.getName()))
+        List<ReplaceMenuTagsResponseDto.TagRefResponseDto> tagResults = byName.values().stream()
+            .map(tag -> new ReplaceMenuTagsResponseDto.TagRefResponseDto(tag.getId(), tag.getName()))
             .toList();
 
         return new ReplaceMenuTagsResponseDto(menuId, tagResults);

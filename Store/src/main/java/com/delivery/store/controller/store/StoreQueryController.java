@@ -20,14 +20,14 @@ public class StoreQueryController {
     private final StoreQueryService storeQueryService;
 
     @GetMapping({"", "/search"})
-    public StoreQueryResponseDto.StoreSearchPageDto searchStores(
+    public StoreQueryResponseDto.StoreSearchPageResponseDto searchStores(
         @Valid @ModelAttribute StoreSearchRequestDto request
     ) {
         return storeQueryService.searchStores(request);
     }
 
     @GetMapping("/{storeId}")
-    public StoreQueryResponseDto.StoreDetailDto getStoreDetail(@PathVariable Long storeId) {
+    public StoreQueryResponseDto.StoreDetailResponseDto getStoreDetail(@PathVariable Long storeId) {
         return storeQueryService.getStoreDetail(storeId);
     }
 }

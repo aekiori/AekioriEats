@@ -25,6 +25,6 @@ public interface StoreHolidayRepository extends JpaRepository<StoreHoliday, Long
         AND h.holidayDate >= :from
         ORDER BY h.holidayDate ASC
     """) // 가까운 휴일 조회 (기본으로 30일치)
-    List<StoreQueryResponseDto.StoreHolidayDto> findUpcomingHolidaysByStoreId(Long storeId, LocalDate from);
+    List<StoreQueryResponseDto.StoreHolidayResponseDto> findUpcomingHolidaysByStoreId(Long storeId, LocalDate from);
 
 }

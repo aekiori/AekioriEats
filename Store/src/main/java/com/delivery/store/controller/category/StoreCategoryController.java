@@ -18,7 +18,7 @@ public class StoreCategoryController {
     private final StoreQueryService storeQueryService;
 
     @GetMapping
-    public List<StoreQueryResponseDto.CategoryDto> getCategories() {
+    public List<StoreQueryResponseDto.CategoryResponseDto> getCategories() {
         return storeQueryService.getCategories();
     }
 }

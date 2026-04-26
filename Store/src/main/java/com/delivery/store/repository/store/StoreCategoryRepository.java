@@ -20,5 +20,5 @@ public interface StoreCategoryRepository extends JpaRepository<StoreCategory, St
         WHERE sc.storeId = :storeId
         ORDER BY c.id ASC
     """)
-    List<StoreQueryResponseDto.CategoryDto> findCategoriesByStoreId(Long storeId);
+    List<StoreQueryResponseDto.CategoryResponseDto> findCategoriesByStoreId(Long storeId);
 }
