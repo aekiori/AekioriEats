@@ -14,7 +14,8 @@ class AuthRateLimitServiceTest {
     @Test
     void validate_login_blocks_when_account_limit_exceeded() {
         AuthRateLimitService rateLimitService = new AuthRateLimitService(
-            properties(true, 20, 60, 20, 300, 20, 60, 2, 300, 1000)
+            properties(true, 20, 60, 20, 300, 20, 60, 2, 300, 1000),
+            new EmailNormalizer()
         );
 
         rateLimitService.validateLogin("user@example.com", "127.0.0.1");
@@ -24,7 +25,7 @@ class AuthRateLimitServiceTest {
             .isInstanceOf(ApiException.class)
             .satisfies(error -> {
                 ApiException exception = (ApiException) error;
-                assertThat(exception.getCode()).isEqualTo("AUTH_RATE_LIMITED");
+                assertThat(exception.getCode()).isEqualTo("RATE_LIMITED");
                 assertThat(exception.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
             });
     }
@@ -32,7 +33,8 @@ class AuthRateLimitServiceTest {
     @Test
     void clear_login_account_limit_resets_account_counter() {
         AuthRateLimitService rateLimitService = new AuthRateLimitService(
-            properties(true, 20, 60, 20, 300, 20, 60, 1, 300, 1000)
+            properties(true, 20, 60, 20, 300, 20, 60, 1, 300, 1000),
+            new EmailNormalizer()
         );
 
         rateLimitService.validateLogin("user@example.com", "127.0.0.1");
@@ -45,7 +47,8 @@ class AuthRateLimitServiceTest {
     @Test
     void disabled_mode_never_blocks() {
         AuthRateLimitService rateLimitService = new AuthRateLimitService(
-            properties(false, 1, 60, 1, 300, 1, 60, 1, 300, 1000)
+            properties(false, 1, 60, 1, 300, 1, 60, 1, 300, 1000),
+            new EmailNormalizer()
         );
 
         assertThatCode(() -> {

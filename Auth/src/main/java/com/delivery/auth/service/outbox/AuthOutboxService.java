@@ -5,10 +5,10 @@ import com.delivery.auth.domain.outbox.Outbox;
 import com.delivery.auth.domain.user.event.UserCreatedOutboxEvent;
 import com.delivery.auth.dto.event.UserCreatedEventDto;
 import com.delivery.auth.exception.ApiException;
+import com.delivery.auth.exception.AuthErrorCode;
 import com.delivery.auth.repository.outbox.OutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -52,11 +52,7 @@ public class AuthOutboxService {
             return objectMapper.writeValueAsString(payload);
         } catch (Exception exception) {
             log.error("Outbox payload serialization failed. userId={}", userId, exception);
-            throw new ApiException(
-                "OUTBOX_PAYLOAD_SERIALIZATION_ERROR",
-                "Outbox payload serialization failed.",
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            throw new ApiException(AuthErrorCode.OUTBOX_PAYLOAD_SERIALIZATION_ERROR);
         }
     }
 

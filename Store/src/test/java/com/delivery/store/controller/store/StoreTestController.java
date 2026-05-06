@@ -1,6 +1,7 @@
 package com.delivery.store.controller.store;
 
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +17,7 @@ public class StoreTestController {
 
     @GetMapping("/400")
     public void forceBadRequest() {
-        throw new ApiException(
-            "STORE_TEST_BAD_REQUEST",
-            "Intentional bad request for metrics test.",
-            HttpStatus.BAD_REQUEST
-        );
+        throw new ApiException(StoreErrorCode.TEST_BAD_REQUEST);
     }
 
     @GetMapping("/500")

@@ -15,6 +15,7 @@ import com.delivery.store.dto.response.MenuGroupResponseDto;
 import com.delivery.store.dto.response.MenuResponseDto;
 import com.delivery.store.dto.response.ReplaceMenuTagsResponseDto;
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import com.delivery.store.repository.menu.MenuGroupRepository;
 import com.delivery.store.repository.menu.MenuRepository;
 import com.delivery.store.repository.menu.MenuTagRepository;
@@ -23,7 +24,6 @@ import com.delivery.store.repository.option.MenuOptionGroupRepository;
 import com.delivery.store.repository.option.MenuOptionRepository;
 import com.delivery.store.service.store.StoreDomainSupport;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,11 +117,7 @@ public class MenuService {
     ) {
         storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
         MenuGroup menuGroup = menuGroupRepository.findByIdAndStoreId(menuGroupId, storeId)
-            .orElseThrow(() -> new ApiException(
-                "MENU_GROUP_NOT_FOUND",
-                "Menu group was not found.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.MENU_GROUP_NOT_FOUND));
         menuGroup.update(request.name().trim(), request.displayOrder());
         return MenuGroupResponseDto.from(menuGroupRepository.save(menuGroup));
     }
@@ -187,11 +183,7 @@ public class MenuService {
     ) {
         storeDomainSupport.requireOwnedStore(storeId, authenticatedUserId, authenticatedUserRole);
         MenuGroup menuGroup = menuGroupRepository.findByIdAndStoreId(menuGroupId, storeId)
-            .orElseThrow(() -> new ApiException(
-                "MENU_GROUP_NOT_FOUND",
-                "Menu group was not found.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.MENU_GROUP_NOT_FOUND));
 
         List<Menu> menus = menuRepository.findByStoreIdAndMenuGroupIdOrderByDisplayOrderAscIdAsc(storeId, menuGroupId);
         deleteMenus(menus);

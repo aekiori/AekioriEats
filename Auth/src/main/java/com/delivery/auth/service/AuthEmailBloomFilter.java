@@ -27,6 +27,7 @@ public class AuthEmailBloomFilter {
         """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final EmailNormalizer emailNormalizer;
     private final BloomFilter<CharSequence> bloomFilter;
     private final boolean enabled;
     private final int warmupBatchSize;
@@ -34,12 +35,14 @@ public class AuthEmailBloomFilter {
 
     public AuthEmailBloomFilter(
         JdbcTemplate jdbcTemplate,
+        EmailNormalizer emailNormalizer,
         @Value("${auth.bloom.enabled:true}") boolean enabled,
         @Value("${auth.bloom.expected-insertions:5000000}") long expectedInsertions,
         @Value("${auth.bloom.fpp:0.01}") double fpp,
         @Value("${auth.bloom.warmup-batch-size:10000}") int warmupBatchSize
     ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.emailNormalizer = emailNormalizer;
         this.enabled = enabled;
         this.warmupBatchSize = warmupBatchSize;
         this.bloomFilter = BloomFilter.create(
@@ -48,7 +51,7 @@ public class AuthEmailBloomFilter {
             fpp
         );
 
-        // enabled=false면 warmUp()이 early return 하므로 warmedUp=true 로 세팅해 DB fallback 방지
+        // When disabled, keep the filter in DB fallback mode.
         this.warmedUp.set(!enabled);
     }
 
@@ -75,7 +78,7 @@ public class AuthEmailBloomFilter {
                 for (Map<String, Object> row : rows) {
                     Object email = row.get("email");
                     if (email != null) {
-                        bloomFilter.put(email.toString().trim().toLowerCase());
+                        bloomFilter.put(emailNormalizer.normalize(email.toString()));
                     }
 
                     Number userId = (Number) row.get("user_id");

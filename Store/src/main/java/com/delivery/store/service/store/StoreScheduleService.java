@@ -8,10 +8,10 @@ import com.delivery.store.dto.request.owner.ReplaceStoreHoursRequestDto;
 import com.delivery.store.dto.request.owner.StoreHourRequestDto;
 import com.delivery.store.dto.response.StoreDetailResponseDto;
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import com.delivery.store.repository.store.StoreHolidayRepository;
 import com.delivery.store.repository.store.StoreHourRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,11 +70,7 @@ public class StoreScheduleService {
         Set<Integer> seenDays = new HashSet<>();
         for (StoreHourRequestDto weeklyHour : weeklyHours) {
             if (weeklyHour.dayOfWeek() < 1 || weeklyHour.dayOfWeek() > 7) {
-                throw new ApiException(
-                    "INVALID_STORE_HOURS",
-                    "dayOfWeek must be in range 1..7.",
-                    HttpStatus.BAD_REQUEST
-                );
+                throw new ApiException(StoreErrorCode.INVALID_STORE_HOURS, "dayOfWeek must be in range 1..7.");
             }
             if (!seenDays.add(weeklyHour.dayOfWeek())) {
                 duplicatedDays.add(weeklyHour.dayOfWeek());
@@ -84,18 +80,13 @@ public class StoreScheduleService {
 
             if (hasOpenTime != hasCloseTime) {
                 throw new ApiException(
-                    "INVALID_STORE_HOURS",
-                    "openTime and closeTime must both be provided or both be null.",
-                    HttpStatus.BAD_REQUEST
+                    StoreErrorCode.INVALID_STORE_HOURS,
+                    "openTime and closeTime must both be provided or both be null."
                 );
             }
         }
         if (!duplicatedDays.isEmpty()) {
-            throw new ApiException(
-                "INVALID_STORE_HOURS",
-                "Duplicate dayOfWeek is not allowed.",
-                HttpStatus.BAD_REQUEST
-            );
+            throw new ApiException(StoreErrorCode.INVALID_STORE_HOURS, "Duplicate dayOfWeek is not allowed.");
         }
     }
 
@@ -120,20 +111,12 @@ public class StoreScheduleService {
 
     private LocalTime parseTime(String rawTime, String fieldName) {
         if (rawTime == null || rawTime.isBlank()) {
-            throw new ApiException(
-                "INVALID_STORE_HOURS",
-                fieldName + " is invalid.",
-                HttpStatus.BAD_REQUEST
-            );
+            throw new ApiException(StoreErrorCode.INVALID_STORE_HOURS, fieldName + " is invalid.");
         }
         try {
             return LocalTime.parse(rawTime);
         } catch (Exception exception) {
-            throw new ApiException(
-                "INVALID_STORE_HOURS",
-                fieldName + " is invalid.",
-                HttpStatus.BAD_REQUEST
-            );
+            throw new ApiException(StoreErrorCode.INVALID_STORE_HOURS, fieldName + " is invalid.");
         }
     }
 }

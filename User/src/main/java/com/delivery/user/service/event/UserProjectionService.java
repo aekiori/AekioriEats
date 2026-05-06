@@ -3,6 +3,7 @@ package com.delivery.user.service.event;
 import com.delivery.user.domain.user.User;
 import com.delivery.user.dto.event.UserCreatedEventDto;
 import com.delivery.user.exception.UnprocessableEventException;
+import com.delivery.user.service.user.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,6 +30,7 @@ public class UserProjectionService {
         """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final EmailNormalizer emailNormalizer;
 
     @Transactional
     public boolean upsertUserCreated(UserCreatedEventDto event) {
@@ -36,7 +38,7 @@ public class UserProjectionService {
             return false;
         }
 
-        String normalizedEmail = normalizeEmail(event.email());
+        String normalizedEmail = emailNormalizer.normalize(event.email());
         String normalizedStatus = normalizeStatus(event.status());
 
         jdbcTemplate.update(UPSERT_SQL, event.userId(), normalizedEmail, normalizedStatus);
@@ -57,10 +59,6 @@ public class UserProjectionService {
         } catch (DuplicateKeyException exception) {
             return false;
         }
-    }
-
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private String normalizeStatus(String status) {

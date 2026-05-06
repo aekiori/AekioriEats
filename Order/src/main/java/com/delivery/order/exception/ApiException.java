@@ -9,6 +9,14 @@ public class ApiException extends RuntimeException {
     private final String code;
     private final HttpStatus status;
 
+    public ApiException(OrderErrorCode errorCode) {
+        this(errorCode, errorCode.message());
+    }
+
+    public ApiException(OrderErrorCode errorCode, String message) {
+        this(errorCode.code(), message, errorCode.status());
+    }
+
     public ApiException(String code, String message, HttpStatus status) {
         super(message);
         this.code = code;

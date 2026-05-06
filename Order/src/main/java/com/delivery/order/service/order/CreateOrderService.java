@@ -8,6 +8,7 @@ import com.delivery.order.dto.request.CreateOrderRequestDto;
 import com.delivery.order.dto.request.CreateOrderItemRequestDto;
 import com.delivery.order.dto.response.CreateOrderResponseDto;
 import com.delivery.order.exception.ApiException;
+import com.delivery.order.exception.OrderErrorCode;
 import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
 import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
@@ -15,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -90,11 +90,7 @@ public class CreateOrderService {
 
         if (!acquired) {
             validateProcessingRequest(idempotencyKey, requestHash);
-            throw new ApiException(
-                "IDEMPOTENT_REQUEST_IN_PROGRESS",
-                "Same idempotent request is already being processed.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(OrderErrorCode.IDEMPOTENT_REQUEST_IN_PROGRESS);
         }
 
         return null;
@@ -162,11 +158,7 @@ public class CreateOrderService {
 
     private void validateFinalAmount(int finalAmount) {
         if (finalAmount < 0) {
-            throw new ApiException(
-                "INVALID_AMOUNT",
-                "Final amount must be zero or greater.",
-                HttpStatus.BAD_REQUEST
-            );
+            throw new ApiException(OrderErrorCode.INVALID_AMOUNT);
         }
     }
 
@@ -174,11 +166,7 @@ public class CreateOrderService {
         String processingRequestHash = orderIdempotencyCacheService.getProcessingRequestHash(idempotencyKey);
 
         if (processingRequestHash != null && !processingRequestHash.equals(requestHash)) {
-            throw new ApiException(
-                "IDEMPOTENCY_KEY_CONFLICT",
-                "Different request payload was submitted with the same idempotencyKey.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(OrderErrorCode.IDEMPOTENCY_KEY_CONFLICT);
         }
     }
 
@@ -264,21 +252,13 @@ public class CreateOrderService {
 
             return HexFormat.of().formatHex(messageDigest.digest(json.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception exception) {
-            throw new ApiException(
-                "REQUEST_HASH_GENERATION_ERROR",
-                "Request hash generation failed.",
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            throw new ApiException(OrderErrorCode.REQUEST_HASH_GENERATION_ERROR);
         }
     }
 
     private void validateSameRequest(Order existingOrder, String requestHash) {
         if (existingOrder.getRequestHash() != null && !existingOrder.getRequestHash().equals(requestHash)) {
-            throw new ApiException(
-                "IDEMPOTENCY_KEY_CONFLICT",
-                "Different request payload was submitted with the same idempotencyKey.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(OrderErrorCode.IDEMPOTENCY_KEY_CONFLICT);
         }
     }
 

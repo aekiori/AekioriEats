@@ -2,27 +2,28 @@ package com.delivery.auth.service;
 
 import com.delivery.auth.config.AuthRateLimitProperties;
 import com.delivery.auth.exception.ApiException;
+import com.delivery.auth.exception.AuthErrorCode;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthRateLimitService {
     private final AuthRateLimitProperties properties;
+    private final EmailNormalizer emailNormalizer;
     private final int cleanupThreshold;
     private final long maxWindowSeconds;
     private final Map<String, BucketHolder> buckets = new ConcurrentHashMap<>();
 
-    public AuthRateLimitService(AuthRateLimitProperties properties) {
+    public AuthRateLimitService(AuthRateLimitProperties properties, EmailNormalizer emailNormalizer) {
         this.properties = properties;
+        this.emailNormalizer = emailNormalizer;
         this.cleanupThreshold = properties.cleanupThreshold();
         this.maxWindowSeconds = properties.maxWindowSeconds();
     }
@@ -40,7 +41,7 @@ public class AuthRateLimitService {
             "Too many signup attempts. Please try again later."
         );
         requireBucket(
-            "signup:account:" + normalizeEmail(email),
+            "signup:account:" + emailNormalizer.normalizeOrUnknown(email),
             signup.getAccount().requestLimit(),
             signup.getAccount().rateLimitPeriodSeconds(),
             "Too many signup attempts. Please try again later."
@@ -60,7 +61,7 @@ public class AuthRateLimitService {
             "Too many login attempts. Please try again later."
         );
         requireBucket(
-            "login:account:" + normalizeEmail(email),
+            "login:account:" + emailNormalizer.normalizeOrUnknown(email),
             login.getAccount().requestLimit(),
             login.getAccount().rateLimitPeriodSeconds(),
             "Too many login attempts. Please try again later."
@@ -71,7 +72,7 @@ public class AuthRateLimitService {
         if (!properties.isEnabled()) {
             return;
         }
-        buckets.remove("login:account:" + normalizeEmail(email));
+        buckets.remove("login:account:" + emailNormalizer.normalizeOrUnknown(email));
     }
 
     private void requireBucket(
@@ -84,11 +85,7 @@ public class AuthRateLimitService {
             return;
         }
 
-        throw new ApiException(
-            "AUTH_RATE_LIMITED",
-            message,
-            HttpStatus.TOO_MANY_REQUESTS
-        );
+        throw new ApiException(AuthErrorCode.RATE_LIMITED, message);
     }
 
     private boolean tryConsume(String bucketKey, int requestLimit, long rateLimitPeriodSeconds) {
@@ -115,10 +112,6 @@ public class AuthRateLimitService {
         long expiredBefore = now - maxWindowSeconds;
         buckets.entrySet()
             .removeIf(entry -> entry.getValue().lastAccessEpochSecond < expiredBefore);
-    }
-
-    private String normalizeEmail(String email) {
-        return email == null ? "unknown" : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private String normalizeIp(String clientIp) {

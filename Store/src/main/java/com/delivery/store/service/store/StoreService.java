@@ -13,6 +13,7 @@ import com.delivery.store.dto.response.CreateStoreResponseDto;
 import com.delivery.store.dto.response.OwnerStoreSummaryResponseDto;
 import com.delivery.store.dto.response.StoreDetailResponseDto;
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import com.delivery.store.repository.category.CategoryRepository;
 import com.delivery.store.repository.menu.MenuGroupRepository;
 import com.delivery.store.repository.menu.MenuRepository;
@@ -25,7 +26,6 @@ import com.delivery.store.repository.store.StoreHourRepository;
 import com.delivery.store.repository.store.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -166,11 +166,7 @@ public class StoreService {
 
         List<Category> categories = categoryRepository.findAllById(normalizedIds);
         if (categories.size() != normalizedIds.size()) {
-            throw new ApiException(
-                "INVALID_CATEGORY_IDS",
-                "One or more categories were not found.",
-                HttpStatus.BAD_REQUEST
-            );
+            throw new ApiException(StoreErrorCode.INVALID_CATEGORY_IDS);
         }
 
         List<StoreCategory> storeCategories = normalizedIds.stream()
@@ -208,10 +204,6 @@ public class StoreService {
     }
 
     private ApiException storeNameConflict() {
-        return new ApiException(
-            "STORE_NAME_ALREADY_EXISTS_FOR_OWNER",
-            "Store name is already in use for this owner.",
-            HttpStatus.CONFLICT
-        );
+        return new ApiException(StoreErrorCode.STORE_NAME_ALREADY_EXISTS_FOR_OWNER);
     }
 }

@@ -8,11 +8,11 @@ import com.delivery.order.dto.event.OrderCreatedEventDto;
 import com.delivery.order.dto.event.OrderStatusChangedEventDto;
 import com.delivery.order.dto.event.PaymentRequestedEventDto;
 import com.delivery.order.exception.ApiException;
+import com.delivery.order.exception.OrderErrorCode;
 import com.delivery.order.repository.outbox.OutboxRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -94,11 +94,7 @@ public class OrderOutboxService {
             return objectMapper.writeValueAsString(payload);
         } catch (Exception exception) {
             log.error("Outbox payload serialization failed. orderId={}", orderId, exception);
-            throw new ApiException(
-                "OUTBOX_PAYLOAD_SERIALIZATION_ERROR",
-                "Outbox payload 생성에 실패했다.",
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            throw new ApiException(OrderErrorCode.OUTBOX_PAYLOAD_SERIALIZATION_ERROR);
         }
     }
 
@@ -106,4 +102,3 @@ public class OrderOutboxService {
         return UUID.randomUUID().toString();
     }
 }
-

@@ -234,7 +234,7 @@ class AuthServiceIntegrationTest {
             .isInstanceOf(ApiException.class)
             .satisfies(error -> {
                 ApiException exception = (ApiException) error;
-                assertThat(exception.getCode()).isEqualTo("AUTH_REFRESH_TOKEN_REUSE_DETECTED");
+                assertThat(exception.getCode()).isEqualTo("REFRESH_TOKEN_REUSE_DETECTED");
                 assertThat(exception.getStatus()).isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
             });
 

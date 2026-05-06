@@ -1,7 +1,7 @@
 package com.delivery.order.service.order;
 
 import com.delivery.order.exception.ApiException;
-import org.springframework.http.HttpStatus;
+import com.delivery.order.exception.OrderErrorCode;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,18 +29,10 @@ public class OrderAuthorizationService {
     }
 
     private ApiException unauthorizedPrincipal() {
-        return new ApiException(
-            "UNAUTHORIZED_PRINCIPAL",
-            "Authenticated principal is missing or invalid.",
-            HttpStatus.UNAUTHORIZED
-        );
+        return new ApiException(OrderErrorCode.UNAUTHORIZED_PRINCIPAL);
     }
 
     private ApiException forbiddenResourceAccess() {
-        return new ApiException(
-            "FORBIDDEN_RESOURCE_ACCESS",
-            "You do not have permission to access this resource.",
-            HttpStatus.FORBIDDEN
-        );
+        return new ApiException(OrderErrorCode.FORBIDDEN_RESOURCE_ACCESS);
     }
 }

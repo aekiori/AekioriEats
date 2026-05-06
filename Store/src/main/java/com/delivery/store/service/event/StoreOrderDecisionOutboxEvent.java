@@ -4,7 +4,7 @@ import com.delivery.store.constant.OrderEventType;
 import com.delivery.store.domain.outbox.Outbox;
 import com.delivery.store.dto.event.StoreOrderDecisionEventDto;
 import com.delivery.store.exception.ApiException;
-import org.springframework.http.HttpStatus;
+import com.delivery.store.exception.StoreErrorCode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -59,11 +59,7 @@ public final class StoreOrderDecisionOutboxEvent {
         try {
             return OBJECT_MAPPER.writeValueAsString(payload);
         } catch (Exception exception) {
-            throw new ApiException(
-                "OUTBOX_PAYLOAD_SERIALIZATION_ERROR",
-                "Outbox payload serialization failed.",
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            throw new ApiException(StoreErrorCode.OUTBOX_PAYLOAD_SERIALIZATION_ERROR);
         }
     }
 }

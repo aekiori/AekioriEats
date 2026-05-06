@@ -8,12 +8,12 @@ import com.delivery.store.dto.request.owner.GetStoreOrdersRequestDto;
 import com.delivery.store.dto.response.StoreOrderDecisionResponseDto;
 import com.delivery.store.dto.response.StoreOrderResponseDto;
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import com.delivery.store.repository.outbox.OutboxRepository;
 import com.delivery.store.repository.store.StoreOrderRepository;
 import com.delivery.store.repository.store.StoreRepository;
 import com.delivery.store.service.event.StoreOrderDecisionOutboxEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +35,7 @@ public class StoreOrderDecisionService {
         long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new ApiException("STORE_NOT_FOUND", "Store not found.", HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.STORE_NOT_FOUND));
         storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
 
         return storeOrderRepository.findByStoreIdAndStatusOrderByCreatedAtDesc(storeId, request.resolvedStatus())
@@ -52,14 +52,14 @@ public class StoreOrderDecisionService {
         long authenticatedUserId
     ) {
         Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new ApiException("STORE_NOT_FOUND", "Store not found.", HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.STORE_NOT_FOUND));
         storeAuthorizationService.requireStoreOwner(authenticatedUserId, store.getOwnerUserId());
 
         StoreOrder storeOrder = storeOrderRepository.findByOrderId(orderId)
-            .orElseThrow(() -> new ApiException("STORE_ORDER_NOT_FOUND", "Store order not found.", HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.STORE_ORDER_NOT_FOUND));
 
         if (!storeOrder.getStoreId().equals(storeId)) {
-            throw new ApiException("STORE_ORDER_MISMATCH", "Store order does not belong to this store.", HttpStatus.BAD_REQUEST);
+            throw new ApiException(StoreErrorCode.STORE_ORDER_MISMATCH);
         }
 
         StoreOrder.Status targetStatus = toStatus(request.decision());
@@ -68,11 +68,7 @@ public class StoreOrderDecisionService {
         }
 
         if (storeOrder.getStatus() != StoreOrder.Status.PENDING) {
-            throw new ApiException(
-                "STORE_ORDER_ALREADY_DECIDED",
-                "Store order decision is already completed.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(StoreErrorCode.STORE_ORDER_ALREADY_DECIDED);
         }
 
         LocalDateTime decidedAt = LocalDateTime.now();

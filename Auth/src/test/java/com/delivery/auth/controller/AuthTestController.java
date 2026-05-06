@@ -1,6 +1,7 @@
 package com.delivery.auth.controller;
 
 import com.delivery.auth.exception.ApiException;
+import com.delivery.auth.exception.AuthErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +17,7 @@ public class AuthTestController {
 
     @GetMapping("/400")
     public void forceBadRequest() {
-        throw new ApiException(
-            "AUTH_TEST_BAD_REQUEST",
-            "Intentional bad request for metrics test.",
-            HttpStatus.BAD_REQUEST
-        );
+        throw new ApiException(AuthErrorCode.TEST_BAD_REQUEST);
     }
 
     @GetMapping("/500")

@@ -2,9 +2,9 @@ package com.delivery.order.service.outbox;
 
 import com.delivery.order.domain.outbox.Outbox;
 import com.delivery.order.exception.ApiException;
+import com.delivery.order.exception.OrderErrorCode;
 import com.delivery.order.repository.outbox.OutboxRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,11 +36,6 @@ public class OutboxStatusService {
 
     private Outbox findOutbox(String eventId) {
         return outboxRepository.findByEventId(eventId)
-            .orElseThrow(() -> new ApiException(
-                "OUTBOX_NOT_FOUND",
-                "Outbox 이벤트를 찾을 수 없다.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(OrderErrorCode.OUTBOX_NOT_FOUND));
     }
 }
-

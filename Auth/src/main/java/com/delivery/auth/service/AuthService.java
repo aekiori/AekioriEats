@@ -9,18 +9,17 @@ import com.delivery.auth.dto.request.SignupRequestDto;
 import com.delivery.auth.dto.response.AuthTokenResponseDto;
 import com.delivery.auth.dto.response.EmailDuplicateCheckResponseDto;
 import com.delivery.auth.exception.ApiException;
+import com.delivery.auth.exception.AuthErrorCode;
 import com.delivery.auth.repository.token.RefreshTokenRepository;
 import com.delivery.auth.repository.user.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -32,13 +31,14 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthEmailBloomFilter authEmailBloomFilter;
     private final AuthRateLimitService authRateLimitService;
+    private final EmailNormalizer emailNormalizer;
 
     @Value("${auth.jwt.refresh-token-expiration-seconds:1209600}")
     private long refreshTokenExpirationSeconds;
 
     @Transactional(readOnly = true)
     public EmailDuplicateCheckResponseDto checkEmailDuplicate(String email) {
-        String normalizedEmail = normalizeEmail(email);
+        String normalizedEmail = emailNormalizer.normalize(email);
 
         if (!authEmailBloomFilter.shouldCheckDb(normalizedEmail)) {
             return EmailDuplicateCheckResponseDto.from(normalizedEmail, false);
@@ -51,15 +51,11 @@ public class AuthService {
 
     @Transactional
     public AuthTokenResponseDto signup(SignupRequestDto request, String clientIp) {
-        String normalizedEmail = normalizeEmail(request.email());
+        String normalizedEmail = emailNormalizer.normalize(request.email());
         authRateLimitService.validateSignup(normalizedEmail, clientIp);
 
         if (authEmailBloomFilter.shouldCheckDb(normalizedEmail) && authUserRepository.existsByEmail(normalizedEmail)) {
-            throw new ApiException(
-                "AUTH_EMAIL_ALREADY_EXISTS",
-                "Email is already registered.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(AuthErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         AuthUser authUser;
@@ -68,11 +64,7 @@ public class AuthService {
                 AuthUser.createForSignup(normalizedEmail, passwordEncoder.encode(request.password()))
             );
         } catch (DataIntegrityViolationException exception) {
-            throw new ApiException(
-                "AUTH_EMAIL_ALREADY_EXISTS",
-                "Email is already registered.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(AuthErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         authEmailBloomFilter.put(normalizedEmail);
@@ -84,30 +76,18 @@ public class AuthService {
 
     @Transactional
     public AuthTokenResponseDto login(LoginRequestDto request, String clientIp) {
-        String normalizedEmail = normalizeEmail(request.email());
+        String normalizedEmail = emailNormalizer.normalize(request.email());
         authRateLimitService.validateLogin(normalizedEmail, clientIp);
 
         AuthUser authUser = authUserRepository.findByEmail(normalizedEmail)
-            .orElseThrow(() -> new ApiException(
-                "AUTH_INVALID_CREDENTIALS",
-                "Email or password is invalid.",
-                HttpStatus.UNAUTHORIZED
-            ));
+            .orElseThrow(() -> new ApiException(AuthErrorCode.INVALID_CREDENTIALS));
 
         if (!authUser.isActive()) {
-            throw new ApiException(
-                "AUTH_USER_NOT_ACTIVE",
-                "User is not active.",
-                HttpStatus.FORBIDDEN
-            );
+            throw new ApiException(AuthErrorCode.USER_NOT_ACTIVE);
         }
 
         if (!passwordEncoder.matches(request.password(), authUser.getPasswordHash())) {
-            throw new ApiException(
-                "AUTH_INVALID_CREDENTIALS",
-                "Email or password is invalid.",
-                HttpStatus.UNAUTHORIZED
-            );
+            throw new ApiException(AuthErrorCode.INVALID_CREDENTIALS);
         }
 
         authRateLimitService.clearLoginAccountLimit(normalizedEmail);
@@ -117,36 +97,20 @@ public class AuthService {
     @Transactional(noRollbackFor = ApiException.class)
     public AuthTokenResponseDto refresh(RefreshTokenRequestDto request) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
-            .orElseThrow(() -> new ApiException(
-                "AUTH_INVALID_REFRESH_TOKEN",
-                "Refresh token is invalid.",
-                HttpStatus.UNAUTHORIZED
-            ));
+            .orElseThrow(() -> new ApiException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         if (Boolean.TRUE.equals(refreshToken.getRevoked())) {
             revokeActiveRefreshTokens(refreshToken.getUserId());
-            throw new ApiException(
-                "AUTH_REFRESH_TOKEN_REUSE_DETECTED",
-                "Refresh token reuse detected. Please login again.",
-                HttpStatus.UNAUTHORIZED
-            );
+            throw new ApiException(AuthErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
         }
 
         if (refreshToken.isExpired(LocalDateTime.now())) {
             refreshToken.revoke();
-            throw new ApiException(
-                "AUTH_REFRESH_TOKEN_EXPIRED",
-                "Refresh token is expired.",
-                HttpStatus.UNAUTHORIZED
-            );
+            throw new ApiException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
         AuthUser authUser = authUserRepository.findById(refreshToken.getUserId())
-            .orElseThrow(() -> new ApiException(
-                "AUTH_USER_NOT_FOUND",
-                "User was not found.",
-                HttpStatus.UNAUTHORIZED
-            ));
+            .orElseThrow(() -> new ApiException(AuthErrorCode.USER_NOT_FOUND));
 
         refreshToken.revoke();
         return issueTokens(authUser);
@@ -175,10 +139,6 @@ public class AuthService {
             "Bearer",
             jwtTokenProvider.getAccessTokenExpirationSeconds()
         );
-    }
-
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private void revokeActiveRefreshTokens(Long userId) {

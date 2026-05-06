@@ -4,11 +4,11 @@ import com.delivery.store.domain.menu.Menu;
 import com.delivery.store.domain.menu.MenuGroup;
 import com.delivery.store.domain.store.Store;
 import com.delivery.store.exception.ApiException;
+import com.delivery.store.exception.StoreErrorCode;
 import com.delivery.store.repository.menu.MenuGroupRepository;
 import com.delivery.store.repository.menu.MenuRepository;
 import com.delivery.store.repository.store.StoreRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -31,20 +31,12 @@ public class StoreDomainSupport {
 
     public Store findStore(Long storeId) {
         return storeRepository.findById(storeId)
-            .orElseThrow(() -> new ApiException(
-                "STORE_NOT_FOUND",
-                "Store was not found.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.STORE_NOT_FOUND));
     }
 
     public Menu findMenu(Long menuId, Long storeId) {
         return menuRepository.findByIdAndStoreId(menuId, storeId)
-            .orElseThrow(() -> new ApiException(
-                "MENU_NOT_FOUND",
-                "Menu was not found.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.MENU_NOT_FOUND));
     }
 
     public MenuGroup resolveMenuGroup(Long menuGroupId, Long storeId) {
@@ -52,10 +44,6 @@ public class StoreDomainSupport {
             return null;
         }
         return menuGroupRepository.findByIdAndStoreId(menuGroupId, storeId)
-            .orElseThrow(() -> new ApiException(
-                "MENU_GROUP_NOT_FOUND",
-                "Menu group was not found for this store.",
-                HttpStatus.BAD_REQUEST
-            ));
+            .orElseThrow(() -> new ApiException(StoreErrorCode.MENU_GROUP_NOT_FOUND_FOR_STORE));
     }
 }

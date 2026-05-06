@@ -6,34 +6,29 @@ import com.delivery.user.dto.request.UpdateUserStatusRequestDto;
 import com.delivery.user.dto.response.CreateUserResponseDto;
 import com.delivery.user.dto.response.UserDetailResponseDto;
 import com.delivery.user.exception.ApiException;
+import com.delivery.user.exception.UserErrorCode;
 import com.delivery.user.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final UserAuthorizationService userAuthorizationService;
+    private final EmailNormalizer emailNormalizer;
 
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto request) {
-        String normalizedEmail = normalizeEmail(request.email());
+        String normalizedEmail = emailNormalizer.normalize(request.email());
         User savedUser;
 
         try {
             savedUser = userRepository.save(User.create(normalizedEmail));
         } catch (DataIntegrityViolationException exception) {
-            throw new ApiException(
-                "USER_EMAIL_ALREADY_EXISTS",
-                "Email is already registered.",
-                HttpStatus.CONFLICT
-            );
+            throw new ApiException(UserErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         return CreateUserResponseDto.from(savedUser);
@@ -70,14 +65,7 @@ public class UserService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new ApiException(
-                "USER_NOT_FOUND",
-                "User was not found.",
-                HttpStatus.NOT_FOUND
-            ));
+            .orElseThrow(() -> new ApiException(UserErrorCode.USER_NOT_FOUND));
     }
 
-    private String normalizeEmail(String email) {
-        return email.toLowerCase(Locale.ROOT);
-    }
 }
