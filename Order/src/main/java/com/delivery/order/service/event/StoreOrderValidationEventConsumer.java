@@ -2,6 +2,7 @@ package com.delivery.order.service.event;
 
 import com.delivery.order.constant.OrderEventType;
 import com.delivery.order.dto.event.StoreOrderValidationEventDto;
+import com.delivery.order.exception.KafkaConsumerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -45,7 +46,7 @@ public class StoreOrderValidationEventConsumer {
                 record.offset(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("Store validation consume failed.", exception);
         }
     }
 
@@ -85,4 +86,3 @@ public class StoreOrderValidationEventConsumer {
         );
     }
 }
-

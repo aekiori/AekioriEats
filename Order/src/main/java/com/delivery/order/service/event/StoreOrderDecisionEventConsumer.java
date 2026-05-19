@@ -2,6 +2,7 @@ package com.delivery.order.service.event;
 
 import com.delivery.order.constant.OrderEventType;
 import com.delivery.order.dto.event.StoreOrderDecisionEventDto;
+import com.delivery.order.exception.KafkaConsumerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -44,7 +45,7 @@ public class StoreOrderDecisionEventConsumer {
                 record.offset(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("Store order decision consume failed.", exception);
         }
     }
 
@@ -82,4 +83,3 @@ public class StoreOrderDecisionEventConsumer {
         );
     }
 }
-

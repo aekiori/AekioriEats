@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -116,7 +117,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
             return chain.filter(exchange.mutate().request(requestWithUserId).build());
         } catch (ExpiredJwtException e) {
-            log.info("JWT 만료. path={}, error={}", path, e.getMessage());
+            log.info("JWT expired. path={}, error={}", path, e.getMessage());
             return unauthorized(
                 exchange,
                 path,
@@ -124,7 +125,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 "Access token has expired."
             );
         } catch (SignatureException | MalformedJwtException e) {
-            log.warn("JWT 위변조/형식 오류. path={}, error={}", path, e.getMessage());
+            log.warn("JWT signature or format is invalid. path={}, error={}", path, e.getMessage());
             return unauthorized(
                 exchange,
                 path,
@@ -132,7 +133,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 "Access token is invalid."
             );
         } catch (UnsupportedJwtException e) {
-            log.warn("지원하지 않는 JWT. path={}, error={}", path, e.getMessage());
+            log.warn("JWT type is unsupported. path={}, error={}", path, e.getMessage());
             return unauthorized(
                 exchange,
                 path,
@@ -140,7 +141,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 "Access token is unsupported."
             );
         } catch (IllegalArgumentException e) {
-            log.warn("JWT 파싱 인자 오류. path={}, error={}", path, e.getMessage());
+            log.warn("JWT parsing argument is invalid. path={}, error={}", path, e.getMessage());
             return unauthorized(
                 exchange,
                 path,
@@ -148,7 +149,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 "Access token is invalid."
             );
         } catch (Exception e) {
-            log.warn("JWT 검증 실패. path={}, error={}", path, e.getMessage());
+            log.warn("JWT validation failed. path={}, error={}", path, e.getMessage());
             return unauthorized(
                 exchange,
                 path,
@@ -199,7 +200,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return exchange.getResponse()
                 .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
         } catch (JsonProcessingException e) {
-            log.error("401 응답 직렬화 실패. path={}, code={}", path, code, e);
+            log.error("Failed to serialize 401 response. path={}, code={}", path, code, e);
             return exchange.getResponse().setComplete();
         }
     }

@@ -1,7 +1,6 @@
 package com.delivery.order.service.idempotency;
 
 import com.delivery.order.dto.response.CreateOrderResponseDto;
-import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
         try {
             return objectMapper.readValue(cachedValue, CreateOrderResponseDto.class);
         } catch (Exception exception) {
-            log.warn("Redis 멱등성 결과 파싱 실패. idempotencyKey={}", idempotencyKey, exception);
+            log.warn("Failed to parse Redis idempotency result. idempotencyKey={}", idempotencyKey, exception);
             stringRedisTemplate.delete(resultKey(idempotencyKey));
             return null;
         }
@@ -73,7 +72,7 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
             );
             stringRedisTemplate.delete(lockKey(idempotencyKey));
         } catch (Exception exception) {
-            log.warn("Redis 멱등성 결과 저장 실패. idempotencyKey={}", idempotencyKey, exception);
+            log.warn("Failed to save Redis idempotency result. idempotencyKey={}", idempotencyKey, exception);
         }
     }
 
@@ -90,4 +89,3 @@ public class RedisOrderIdempotencyCacheService implements OrderIdempotencyCacheS
         return "order:idempotency:result:" + idempotencyKey;
     }
 }
-

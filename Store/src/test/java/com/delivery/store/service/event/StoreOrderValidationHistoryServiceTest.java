@@ -26,13 +26,13 @@ class StoreOrderValidationHistoryServiceTest {
     @BeforeEach
     void setUp() {
         storeOrderValidationHistoryService = new StoreOrderValidationHistoryService(storeOrderValidationRepository);
-        when(storeOrderValidationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
     void save_creates_accepted_history_when_order_has_no_previous_record() {
         OrderCreatedEventDto event = createEvent(1L, 100L);
         when(storeOrderValidationRepository.findTopByOrderIdOrderByIdDesc(1L)).thenReturn(Optional.empty());
+        stubSaveReturnsArgument();
 
         StoreOrderValidation saved = storeOrderValidationHistoryService.save(
             event,
@@ -51,6 +51,7 @@ class StoreOrderValidationHistoryServiceTest {
     void save_creates_rejected_history_when_order_has_no_previous_record() {
         OrderCreatedEventDto event = createEvent(2L, 200L);
         when(storeOrderValidationRepository.findTopByOrderIdOrderByIdDesc(2L)).thenReturn(Optional.empty());
+        stubSaveReturnsArgument();
 
         StoreOrderValidation saved = storeOrderValidationHistoryService.save(
             event,
@@ -100,5 +101,9 @@ class StoreOrderValidationHistoryServiceTest {
             20000,
             "PENDING"
         );
+    }
+
+    private void stubSaveReturnsArgument() {
+        when(storeOrderValidationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 }

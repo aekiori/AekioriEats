@@ -1,5 +1,6 @@
 package com.delivery.order.service.outbox;
 
+import com.delivery.order.exception.KafkaConsumerException;
 import com.delivery.order.service.event.KafkaEventExtractor;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -29,7 +30,7 @@ public class OutboxPublishStatusConsumer {
             String eventId = extractEventId(record);
 
             if (eventId == null) {
-                log.debug("Outbox eventId 추출 실패. topic={}, offset={}", record.topic(), record.offset());
+                log.debug("Failed to extract outbox eventId. topic={}, offset={}", record.topic(), record.offset());
                 return;
             }
 
@@ -37,7 +38,7 @@ public class OutboxPublishStatusConsumer {
 
             if (updated) {
                 log.info(
-                    "Outbox 발행 상태 자동 전환 완료. topic={}, eventId={}, offset={}",
+                    "Outbox publish status marked as published. topic={}, eventId={}, offset={}",
                     record.topic(),
                     eventId,
                     record.offset()
@@ -46,19 +47,19 @@ public class OutboxPublishStatusConsumer {
             }
 
             log.debug(
-                "Outbox 상태 자동 전환 스킵. topic={}, eventId={}, offset={}",
+                "Outbox publish status was already handled. topic={}, eventId={}, offset={}",
                 record.topic(),
                 eventId,
                 record.offset()
             );
         } catch (Exception exception) {
             log.error(
-                "Outbox 발행 상태 자동 전환 실패. topic={}, offset={}",
+                "Failed to update outbox publish status. topic={}, offset={}",
                 record.topic(),
                 record.offset(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("Outbox publish status update failed.", exception);
         }
     }
 
@@ -66,4 +67,3 @@ public class OutboxPublishStatusConsumer {
         return kafkaEventExtractor.extractOutboxEventId(record);
     }
 }
-

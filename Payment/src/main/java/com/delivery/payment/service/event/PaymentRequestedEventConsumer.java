@@ -2,6 +2,7 @@ package com.delivery.payment.service.event;
 
 import com.delivery.payment.constant.OrderEventType;
 import com.delivery.payment.dto.event.PaymentRequestedEventDto;
+import com.delivery.payment.exception.KafkaConsumerException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +29,19 @@ public class PaymentRequestedEventConsumer {
     public void consume(ConsumerRecord<String, String> record) {
         try {
             PaymentRequestedEventDto event = extractEvent(record);
-            log.info("paymentReq come in {}", record);
             if (event == null || !OrderEventType.PAYMENT_REQUESTED.equals(event.eventType())) {
                 return;
             }
             paymentRequestedEventHandler.handle(event);
         } catch (Exception exception) {
-            throw new RuntimeException(exception);
+            log.error(
+                "Payment requested consume failed. topic={}, partition={}, offset={}",
+                record.topic(),
+                record.partition(),
+                record.offset(),
+                exception
+            );
+            throw new KafkaConsumerException("Payment requested consume failed.", exception);
         }
     }
 

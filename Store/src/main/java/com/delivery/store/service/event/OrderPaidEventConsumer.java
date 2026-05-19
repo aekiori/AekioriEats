@@ -2,6 +2,7 @@ package com.delivery.store.service.event;
 
 import com.delivery.store.constant.OrderEventType;
 import com.delivery.store.dto.event.OrderStatusChangedEventDto;
+import com.delivery.store.exception.KafkaConsumerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -41,7 +42,7 @@ public class OrderPaidEventConsumer {
                 record.offset(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("Order paid consume failed.", exception);
         }
     }
 

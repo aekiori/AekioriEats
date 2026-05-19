@@ -2,9 +2,11 @@ package com.delivery.point.service.event;
 
 import com.delivery.point.constant.PointEventType;
 import com.delivery.point.dto.event.PointDeductionRequestedEventDto;
+import com.delivery.point.exception.KafkaConsumerException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PointDeductionRequestedEventConsumer {
     private final ObjectMapper objectMapper;
     private final PointDeductionRequestedEventHandler pointDeductionRequestedEventHandler;
@@ -31,7 +34,14 @@ public class PointDeductionRequestedEventConsumer {
             }
             pointDeductionRequestedEventHandler.handle(event);
         } catch (Exception exception) {
-            throw new RuntimeException(exception);
+            log.error(
+                "Point deduction requested consume failed. topic={}, partition={}, offset={}",
+                record.topic(),
+                record.partition(),
+                record.offset(),
+                exception
+            );
+            throw new KafkaConsumerException("Point deduction requested consume failed.", exception);
         }
     }
 

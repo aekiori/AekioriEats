@@ -27,6 +27,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'commons-codec:commons-codec:1.17.1'
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
     implementation 'org.flywaydb:flyway-mysql'
     implementation 'org.redisson:redisson:4.3.1'

@@ -2,6 +2,7 @@ package com.delivery.user.service.event;
 
 import com.delivery.user.constant.UserEventType;
 import com.delivery.user.dto.event.UserCreatedEventDto;
+import com.delivery.user.exception.KafkaConsumerException;
 import com.delivery.user.exception.UnprocessableEventException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +87,7 @@ public class UserCreatedEventConsumer {
                 record.key(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("UserCreated consume failed.", exception);
         }
     }
 

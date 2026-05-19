@@ -2,6 +2,7 @@ package com.delivery.payment.service.event;
 
 import com.delivery.payment.constant.OrderEventType;
 import com.delivery.payment.dto.event.OrderStatusChangedEventDto;
+import com.delivery.payment.exception.KafkaConsumerException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class OrderRefundPendingEventConsumer {
                 record.offset(),
                 exception
             );
-            throw new RuntimeException(exception);
+            throw new KafkaConsumerException("Order refund pending consume failed.", exception);
         }
     }
 

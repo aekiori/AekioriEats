@@ -1,66 +1,7 @@
-SET @column_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = 'stores'
-      AND column_name = 'status_override'
-);
-SET @ddl := IF(
-    @column_exists = 0,
-    'ALTER TABLE stores ADD COLUMN status_override BOOLEAN NOT NULL DEFAULT FALSE',
-    'SELECT 1'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @column_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = 'stores'
-      AND column_name = 'min_order_amount'
-);
-SET @ddl := IF(
-    @column_exists = 0,
-    'ALTER TABLE stores ADD COLUMN min_order_amount INT NOT NULL DEFAULT 0',
-    'SELECT 1'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @column_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = 'stores'
-      AND column_name = 'delivery_tip'
-);
-SET @ddl := IF(
-    @column_exists = 0,
-    'ALTER TABLE stores ADD COLUMN delivery_tip INT NOT NULL DEFAULT 0',
-    'SELECT 1'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @column_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = 'stores'
-      AND column_name = 'store_logo_url'
-);
-SET @ddl := IF(
-    @column_exists = 0,
-    'ALTER TABLE stores ADD COLUMN store_logo_url VARCHAR(512) NULL',
-    'SELECT 1'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+ALTER TABLE stores ADD COLUMN status_override BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE stores ADD COLUMN min_order_amount INT NOT NULL DEFAULT 0;
+ALTER TABLE stores ADD COLUMN delivery_tip INT NOT NULL DEFAULT 0;
+ALTER TABLE stores ADD COLUMN store_logo_url VARCHAR(512) NULL;
 
 CREATE TABLE IF NOT EXISTS categories (
     id BIGINT NOT NULL AUTO_INCREMENT,

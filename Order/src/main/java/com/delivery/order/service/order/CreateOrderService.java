@@ -13,6 +13,7 @@ import com.delivery.order.repository.order.OrderItemRepository;
 import com.delivery.order.repository.order.OrderRepository;
 import com.delivery.order.service.idempotency.OrderIdempotencyCacheService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,8 +24,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,11 +88,38 @@ public class CreateOrderService {
         boolean acquired = orderIdempotencyCacheService.tryAcquire(idempotencyKey, requestHash);
 
         if (!acquired) {
-            validateProcessingRequest(idempotencyKey, requestHash);
-            throw new ApiException(OrderErrorCode.IDEMPOTENT_REQUEST_IN_PROGRESS);
+            return resolveAcquisitionFailure(idempotencyKey, requestHash);
         }
 
         return null;
+    }
+
+    private CreateOrderResponseDto resolveAcquisitionFailure(String idempotencyKey, String requestHash) {
+        String processingRequestHash = orderIdempotencyCacheService.getProcessingRequestHash(idempotencyKey);
+
+        if (processingRequestHash == null) {
+            CreateOrderResponseDto cachedResult = orderIdempotencyCacheService.getCompletedResult(idempotencyKey);
+            if (cachedResult != null) {
+                log.info(
+                    "Idempotent order returned after Redis lock transition. idempotencyKey={}, orderId={}",
+                    idempotencyKey,
+                    cachedResult.orderId()
+                );
+                return cachedResult;
+            }
+
+            log.warn(
+                "Idempotency lock acquisition failed but processing hash was missing. idempotencyKey={}",
+                idempotencyKey
+            );
+            throw new ApiException(OrderErrorCode.IDEMPOTENT_REQUEST_IN_PROGRESS);
+        }
+
+        if (!processingRequestHash.equals(requestHash)) {
+            throw new ApiException(OrderErrorCode.IDEMPOTENCY_KEY_CONFLICT);
+        }
+
+        throw new ApiException(OrderErrorCode.IDEMPOTENT_REQUEST_IN_PROGRESS);
     }
 
     private CreateOrderResponseDto processCreateOrder(CreateOrderRequestDto request, String idempotencyKey, String requestHash) {
@@ -159,14 +185,6 @@ public class CreateOrderService {
     private void validateFinalAmount(int finalAmount) {
         if (finalAmount < 0) {
             throw new ApiException(OrderErrorCode.INVALID_AMOUNT);
-        }
-    }
-
-    private void validateProcessingRequest(String idempotencyKey, String requestHash) {
-        String processingRequestHash = orderIdempotencyCacheService.getProcessingRequestHash(idempotencyKey);
-
-        if (processingRequestHash != null && !processingRequestHash.equals(requestHash)) {
-            throw new ApiException(OrderErrorCode.IDEMPOTENCY_KEY_CONFLICT);
         }
     }
 
@@ -248,9 +266,8 @@ public class CreateOrderService {
                 }).toList());
 
             String json = objectMapper.writeValueAsString(payload);
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
-            return HexFormat.of().formatHex(messageDigest.digest(json.getBytes(StandardCharsets.UTF_8)));
+            return DigestUtils.sha256Hex(json.getBytes(StandardCharsets.UTF_8));
         } catch (Exception exception) {
             throw new ApiException(OrderErrorCode.REQUEST_HASH_GENERATION_ERROR);
         }

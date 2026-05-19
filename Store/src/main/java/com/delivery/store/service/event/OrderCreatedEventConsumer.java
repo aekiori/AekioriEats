@@ -2,6 +2,7 @@ package com.delivery.store.service.event;
 
 import com.delivery.store.constant.OrderEventType;
 import com.delivery.store.dto.event.OrderCreatedEventDto;
+import com.delivery.store.exception.KafkaConsumerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OrderCreatedEventConsumer {
     private final ObjectMapper objectMapper;
     private final OrderCreatedEventHandler orderCreatedEventHandler;
@@ -32,7 +34,14 @@ public class OrderCreatedEventConsumer {
             }
             orderCreatedEventHandler.handle(event);
         } catch (Exception exception) {
-            throw new RuntimeException(exception);
+            log.error(
+                "Order created consume failed. topic={}, partition={}, offset={}",
+                record.topic(),
+                record.partition(),
+                record.offset(),
+                exception
+            );
+            throw new KafkaConsumerException("Order created consume failed.", exception);
         }
     }
 

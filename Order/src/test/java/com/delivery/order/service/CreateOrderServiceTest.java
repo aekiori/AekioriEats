@@ -96,6 +96,26 @@ class CreateOrderServiceTest {
         verifyNoInteractions(orderItemRepository);
     }
 
+    @Test
+    void missing_processing_hash_after_failed_acquire_throws_in_progress() {
+        CreateOrderRequestDto request = createRequest("Seoul Gangnam Teheran-ro 123");
+        String requestHash = invokeHash(request);
+
+        when(orderIdempotencyCacheService.getCompletedResult("idempotency-003")).thenReturn(null);
+        when(orderIdempotencyCacheService.tryAcquire("idempotency-003", requestHash)).thenReturn(false);
+        when(orderIdempotencyCacheService.getProcessingRequestHash("idempotency-003")).thenReturn(null);
+
+        assertThatThrownBy(() -> createOrderService.createOrder(request, "idempotency-003"))
+            .isInstanceOf(ApiException.class)
+            .satisfies(exception -> {
+                ApiException apiException = (ApiException) exception;
+                assertThat(apiException.getCode()).isEqualTo("IDEMPOTENT_REQUEST_IN_PROGRESS");
+                assertThat(apiException.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+            });
+
+        verifyNoInteractions(orderItemRepository);
+    }
+
     private String invokeHash(CreateOrderRequestDto request) {
         try {
             java.lang.reflect.Method method = CreateOrderService.class.getDeclaredMethod("generateRequestHash", CreateOrderRequestDto.class);
