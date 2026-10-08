@@ -191,6 +191,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("timestamp", LocalDateTime.now().toString());
         payload.put("path", path);
+        payload.put("traceId", GatewayTraceIdFilter.getTraceId(exchange));
         payload.put("code", code);
         payload.put("message", message);
         payload.put("errors", null);

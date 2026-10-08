@@ -36,6 +36,9 @@
 - 실제 API 문서는 각 도메인 서비스 Swagger를 기준으로 본다.
 
 ## 보안 하드닝 메모
+- Gateway는 모든 요청에 `X-Trace-Id`를 보장한다.
+- 요청에 유효한 `X-Trace-Id`가 있으면 그대로 downstream으로 전파하고, 없거나 형식이 이상하면 UUID를 새로 생성한다.
+- Gateway에서 직접 반환하는 `401`/`429` JSON에도 `traceId`를 포함한다.
 - `Authorization` 헤더는 `Bearer ` prefix 제거 후 `trim()` 처리한다.
 - 그래서 `Bearer {token}` 뿐 아니라 `Bearer  {token}`(공백 2개 이상)도 정상 파싱된다.
 - 요청 초입에서 외부 입력 `X-User-Id`, `X-User-Role` 헤더는 제거한다.
@@ -47,6 +50,31 @@
 - `AUTH_INVALID_TOKEN`: 변조/형식 불량/빈 토큰
 - `AUTH_UNSUPPORTED_TOKEN`: 미지원 토큰 형식
 - `AUTH_TOKEN_VALIDATION_FAILED`: 기타 검증 실패
+
+## Rate Limit
+
+- Gateway는 인증/공개 API 앞단에서 IP 기반 in-memory rate limit을 적용한다.
+- 기본 적용 경로:
+  - `/api/v1/auth/**`: 60 requests / 60 seconds
+  - `/api/v1/stores/**`: 300 requests / 60 seconds
+- 제한 초과 시 `429 TOO_MANY_REQUESTS` + `RATE_LIMITED` JSON을 반환한다.
+- 기본값은 단일 인스턴스 방어용이다. Gateway를 여러 대 띄우는 운영 환경에서는 Redis 기반 분산 rate limit으로 확장하는 것이 맞다.
+- 기본적으로 `X-Forwarded-For`는 신뢰하지 않는다. 신뢰 가능한 reverse proxy 뒤에서만 `GATEWAY_RATE_LIMIT_TRUST_FORWARDED_FOR=true`로 켠다.
+
+주요 설정:
+
+```yaml
+gateway:
+  rate-limit:
+    enabled: true
+    trust-forwarded-for: false
+    auth:
+      request-limit: 60
+      rate-limit-period-seconds: 60
+    public-api:
+      request-limit: 300
+      rate-limit-period-seconds: 60
+```
 
 ## 하위 서비스 계약
 - Gateway는 인증 성공 후에만 `X-User-Id`, `X-User-Role`를 주입한다.

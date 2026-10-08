@@ -80,6 +80,7 @@ class JwtAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(
             MockServerHttpRequest.get("/api/v1/orders/1")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + forgedToken)
+                .header(GatewayTraceIdFilter.TRACE_ID_HEADER, "trace-auth-001")
                 .build()
         );
         CapturingChain chain = new CapturingChain();
@@ -93,6 +94,7 @@ class JwtAuthenticationFilterTest {
         String body = exchange.getResponse().getBodyAsString().block();
         JsonNode json = objectMapper.readTree(body);
         assertThat(json.path("code").asText()).isEqualTo("AUTH_INVALID_TOKEN");
+        assertThat(json.path("traceId").asText()).isEqualTo("trace-auth-001");
     }
 
     @Test
@@ -139,4 +141,3 @@ class JwtAuthenticationFilterTest {
         }
     }
 }
-
