@@ -36,6 +36,22 @@ gateway:
     auth:
         jwt:
             secret: ${AUTH_JWT_SECRET:auth-super-secret-auth-super-secret-2026}
+    rate-limit:
+        enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+        trust-forwarded-for: ${GATEWAY_RATE_LIMIT_TRUST_FORWARDED_FOR:false}
+        cleanup-threshold: ${GATEWAY_RATE_LIMIT_CLEANUP_THRESHOLD:100000}
+        auth:
+            enabled: ${GATEWAY_RATE_LIMIT_AUTH_ENABLED:true}
+            path-patterns:
+                - /api/v1/auth/**
+            request-limit: ${GATEWAY_RATE_LIMIT_AUTH_REQUEST_LIMIT:60}
+            rate-limit-period-seconds: ${GATEWAY_RATE_LIMIT_AUTH_PERIOD_SECONDS:60}
+        public-api:
+            enabled: ${GATEWAY_RATE_LIMIT_PUBLIC_API_ENABLED:true}
+            path-patterns:
+                - /api/v1/stores/**
+            request-limit: ${GATEWAY_RATE_LIMIT_PUBLIC_API_REQUEST_LIMIT:300}
+            rate-limit-period-seconds: ${GATEWAY_RATE_LIMIT_PUBLIC_API_PERIOD_SECONDS:60}
 
 management:
     endpoints:
